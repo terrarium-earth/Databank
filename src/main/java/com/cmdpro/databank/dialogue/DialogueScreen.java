@@ -2,10 +2,10 @@ package com.cmdpro.databank.dialogue;
 
 import com.cmdpro.databank.dialogue.styles.DialogueStyleManager;
 import com.cmdpro.databank.networking.ModMessages;
-import com.cmdpro.databank.networking.packet.ClickChoiceC2SPacket;
 import com.cmdpro.databank.networking.packet.CloseDialogueC2SPacket;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 public class DialogueScreen extends Screen {
@@ -19,33 +19,36 @@ public class DialogueScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (instance != null && instance.entry != null && instance.entry.style != null) {
-            if (DialogueStyleManager.styles.get(instance.entry.style).mouseClick(instance, mouseX, mouseY, button)) {
+            if (DialogueStyleManager.styles.get(instance.entry.style).mouseClick(instance, event.x(), event.y(), event.button())) {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
         if (instance != null && instance.entry != null && instance.entry.style != null) {
-            if (DialogueStyleManager.styles.get(instance.entry.style).mouseDrag(instance, mouseX, mouseY, button, dragX, dragY)) {
+            if (DialogueStyleManager.styles.get(instance.entry.style).mouseDrag(instance, event.x(), event.y(), event.button(), dx, dy)) {
                 return true;
             }
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+
+        return super.mouseDragged(event, dx, dy);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
         if (instance != null && instance.entry != null && instance.entry.style != null) {
-            if (DialogueStyleManager.styles.get(instance.entry.style).mouseRelease(instance, mouseX, mouseY, button)) {
+            if (DialogueStyleManager.styles.get(instance.entry.style).mouseRelease(instance, event.x(), event.y(), event.button())) {
                 return true;
             }
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+
+        return super.mouseReleased(event);
     }
 
     public void changeEntry(String from, String to) {
@@ -55,10 +58,10 @@ public class DialogueScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+        super.extractRenderState(graphics, mouseX, mouseY, a);
         if (instance != null && instance.entry != null && instance.entry.style != null) {
-            DialogueStyle.render(instance.entry.style, instance, guiGraphics, mouseX, mouseY);
+            DialogueStyle.render(instance.entry.style, instance, graphics, mouseX, mouseY);
         }
     }
 

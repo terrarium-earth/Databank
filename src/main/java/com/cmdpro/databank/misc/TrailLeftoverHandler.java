@@ -24,23 +24,22 @@ import java.util.Map;
 public class TrailLeftoverHandler {
     private static final HashMap<TrailRender, ExtraTrailData> trailLeftovers = new HashMap<>();
     @SubscribeEvent
-    public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
-            PoseStack poseStack = event.getPoseStack();
-            poseStack.pushPose();
-            poseStack.translate(-event.getCamera().getPosition().x, -event.getCamera().getPosition().y, -event.getCamera().getPosition().z);
-            for (Map.Entry<TrailRender, ExtraTrailData> i : new HashMap<>(trailLeftovers).entrySet()) {
-                TrailRender trail = i.getKey();
-                ExtraTrailData data = i.getValue();
-                if (trail.getPositionCount() <= 0) {
-                    trailLeftovers.remove(trail);
-                    trail.stopTicking();
-                } else {
-                    trail.render(poseStack, data.bufferSource, data.packedLight, data.gradient);
-                }
+    public static void onRenderLevelStage(RenderLevelStageEvent.AfterWeather event) {
+        var camera = event.getLevelRenderState().cameraRenderState;
+        PoseStack poseStack = event.getPoseStack();
+        poseStack.pushPose();
+        poseStack.translate(-camera.pos.x(), -camera.pos.y(), -camera.pos.z());
+        for (Map.Entry<TrailRender, ExtraTrailData> i : new HashMap<>(trailLeftovers).entrySet()) {
+            TrailRender trail = i.getKey();
+            ExtraTrailData data = i.getValue();
+            if (trail.getPositionCount() <= 0) {
+                trailLeftovers.remove(trail);
+                trail.stopTicking();
+            } else {
+                trail.render(poseStack, data.bufferSource, data.packedLight, data.gradient);
             }
-            poseStack.popPose();
         }
+        poseStack.popPose();
     }
     public static void addTrail(TrailRender trail, MultiBufferSource bufferSource, int packedLight, ColorGradient gradient) {
         if (!trailLeftovers.containsKey(trail)) {

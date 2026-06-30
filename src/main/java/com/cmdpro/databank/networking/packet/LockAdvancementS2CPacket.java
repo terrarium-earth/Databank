@@ -5,19 +5,19 @@ import com.cmdpro.databank.advancement.ClientAdvancementListener;
 import com.cmdpro.databank.networking.Message;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
 
-public record LockAdvancementS2CPacket(ResourceLocation advancement) implements Message {
+public record LockAdvancementS2CPacket(Identifier advancement) implements Message {
     public static LockAdvancementS2CPacket read(FriendlyByteBuf buf) {
-        ResourceLocation advancement = buf.readResourceLocation();
+        Identifier advancement = buf.readIdentifier();
         return new LockAdvancementS2CPacket(advancement);
     }
     public static void write(FriendlyByteBuf buf, LockAdvancementS2CPacket obj) {
-        buf.writeResourceLocation(obj.advancement);
+        buf.writeIdentifier(obj.advancement);
     }
     public static final Type<LockAdvancementS2CPacket> TYPE = new Type<>(Databank.locate("lock_advancement"));
     @Override

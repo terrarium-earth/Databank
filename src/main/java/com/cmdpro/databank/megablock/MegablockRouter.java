@@ -46,15 +46,12 @@ public abstract class MegablockRouter extends Block {
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        super.onRemove(state, level, pos, newState, movedByPiston);
-        if (state.getBlock() != newState.getBlock()) {
-            BlockPos core = findCore(level, pos.relative(state.getValue(FACING)));
-            if (core != null) {
-                BlockState blockState = level.getBlockState(core);
-                if (blockState.is(getCore())) {
-                    level.destroyBlock(core, true);
-                }
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        BlockPos core = findCore(level, pos.relative(state.getValue(FACING)));
+        if (core != null) {
+            BlockState blockState = level.getBlockState(core);
+            if (blockState.is(getCore())) {
+                level.destroyBlock(core, true);
             }
         }
     }

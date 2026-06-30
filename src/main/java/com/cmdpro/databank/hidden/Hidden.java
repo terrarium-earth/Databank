@@ -1,6 +1,6 @@
 package com.cmdpro.databank.hidden;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class Hidden {
     public Hidden(HiddenTypeInstance<?> type, HiddenCondition condition) {
@@ -8,7 +8,7 @@ public class Hidden {
         this.condition = condition;
         this.type.hidden = this;
     }
-    public ResourceLocation id;
+    public Identifier id;
     public HiddenTypeInstance<?> type;
     public HiddenCondition condition;
 }

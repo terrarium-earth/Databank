@@ -5,14 +5,14 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class DialogueTree {
-    public ResourceLocation id;
+    public Identifier id;
     public Map<String, DialogueEntry> entries;
     public Map<String, DialogueSpeaker> speakers;
     public static final Codec<DialogueTree> CODEC = RecordCodecBuilder.create((builder) -> builder.group(

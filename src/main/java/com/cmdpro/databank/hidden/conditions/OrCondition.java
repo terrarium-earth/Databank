@@ -11,7 +11,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 
 public class OrCondition extends HiddenCondition {
@@ -48,10 +48,10 @@ public class OrCondition extends HiddenCondition {
             value.conditionB.getSerializer().streamCodec().encode(buf, value.conditionB);
         }, (buf) -> {
             ResourceKey<Serializer<?>> conditionAKey = buf.readResourceKey(DatabankRegistries.HIDDEN_CONDITION_REGISTRY_KEY);
-            HiddenCondition.Serializer<?> conditionASerializer = DatabankRegistries.HIDDEN_CONDITION_REGISTRY.get(conditionAKey);
+            HiddenCondition.Serializer<?> conditionASerializer = DatabankRegistries.HIDDEN_CONDITION_REGISTRY.getValueOrThrow(conditionAKey);
             HiddenCondition conditionA = conditionASerializer.streamCodec().decode(buf);
             ResourceKey<HiddenCondition.Serializer<?>> conditionBKey = buf.readResourceKey(DatabankRegistries.HIDDEN_CONDITION_REGISTRY_KEY);
-            HiddenCondition.Serializer<?> conditionBSerializer = DatabankRegistries.HIDDEN_CONDITION_REGISTRY.get(conditionBKey);
+            HiddenCondition.Serializer<?> conditionBSerializer = DatabankRegistries.HIDDEN_CONDITION_REGISTRY.getValueOrThrow(conditionBKey);
             HiddenCondition conditionB = conditionBSerializer.streamCodec().decode(buf);
             return new OrCondition(conditionA, conditionB);
         });

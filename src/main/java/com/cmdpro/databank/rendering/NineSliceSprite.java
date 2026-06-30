@@ -1,16 +1,12 @@
 package com.cmdpro.databank.rendering;
 
 import com.cmdpro.databank.ClientDatabankUtils;
-import com.cmdpro.databank.dialogue.styles.BasicDialogueStyle;
-import com.cmdpro.databank.model.DatabankPartData;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.ExtraCodecs;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 
-public record NineSliceSprite(ResourceLocation texture, int u, int v, int width, int height, int top, int bottom, int left, int right, int defaultInset) {
+public record NineSliceSprite(Identifier texture, int u, int v, int width, int height, int top, int bottom, int left, int right, int defaultInset) {
     public int getHorizontal() {
         return left + right;
     }
@@ -33,18 +29,18 @@ public record NineSliceSprite(ResourceLocation texture, int u, int v, int width,
         return getVerticalInset(defaultInset);
     }
 
-    public void blit(GuiGraphics graphics, int x, int y, int width, int height) {
+    public void blit(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
         blit(graphics, x, y, width, height, defaultInset);
     }
-    public void blit(GuiGraphics graphics, int x, int y, int width, int height, int inset) {
+    public void blit(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int inset) {
         blit(graphics, this.texture, x, y, this.u, this.v, width, height, this.width, this.height, this.top, this.bottom, this.left, this.right, inset);
     }
-    public static void blit(GuiGraphics graphics, ResourceLocation texture, int x, int y, int u, int v, int width, int height, int textureWidth, int textureHeight, int topBorder, int bottomBorder, int leftBorder, int rightBorder, int inset) {
-        graphics.blit(texture, (x-leftBorder)+inset, (y-topBorder)+inset, u, v, leftBorder, topBorder);
-        graphics.blit(texture, (x+width)-inset, (y-topBorder)+inset, (u+textureWidth)-rightBorder, v, rightBorder, topBorder);
+    public static void blit(GuiGraphicsExtractor graphics, Identifier texture, int x, int y, int u, int v, int width, int height, int textureWidth, int textureHeight, int topBorder, int bottomBorder, int leftBorder, int rightBorder, int inset) {
+        graphics.blit(texture, (x-leftBorder)+inset, (y-topBorder)+inset, u, v, leftBorder, topBorder, 256, 256);
+        graphics.blit(texture, (x+width)-inset, (y-topBorder)+inset, (u+textureWidth)-rightBorder, v, rightBorder, topBorder, 256, 256);
 
-        graphics.blit(texture, (x-leftBorder)+inset, (y+height)-inset, u, (v+textureHeight)-bottomBorder, leftBorder, bottomBorder);
-        graphics.blit(texture, (x+width)-inset, (y+height)-inset, (u+textureWidth)-rightBorder, (v+textureHeight)-bottomBorder, rightBorder, bottomBorder);
+        graphics.blit(texture, (x-leftBorder)+inset, (y+height)-inset, u, (v+textureHeight)-bottomBorder, leftBorder, bottomBorder, 256, 256);
+        graphics.blit(texture, (x+width)-inset, (y+height)-inset, (u+textureWidth)-rightBorder, (v+textureHeight)-bottomBorder, rightBorder, bottomBorder, 256, 256);
 
         ClientDatabankUtils.blitStretched(graphics, texture, x+inset, (y-topBorder)+inset, u+leftBorder, v, textureWidth-(leftBorder+rightBorder), topBorder, width-(inset*2), topBorder);
         ClientDatabankUtils.blitStretched(graphics, texture, x+inset, (y+height)-inset, u+leftBorder, v+(textureHeight-bottomBorder), textureWidth-(leftBorder+rightBorder), bottomBorder, width-(inset*2), bottomBorder);
@@ -54,7 +50,7 @@ public record NineSliceSprite(ResourceLocation texture, int u, int v, int width,
         ClientDatabankUtils.blitStretched(graphics, texture, x+inset, y+inset, u+leftBorder, v+topBorder, textureWidth-(leftBorder+rightBorder), textureHeight-(topBorder+bottomBorder), width-(inset*2), height-(inset*2));
     }
     public static final Codec<NineSliceSprite> CODEC = RecordCodecBuilder.create((instance) -> instance.group(
-            ResourceLocation.CODEC.fieldOf("texture").forGetter((data) -> data.texture),
+            Identifier.CODEC.fieldOf("texture").forGetter((data) -> data.texture),
             Codec.INT.fieldOf("u").forGetter((data) -> data.u),
             Codec.INT.fieldOf("v").forGetter((data) -> data.v),
             Codec.INT.fieldOf("width").forGetter((data) -> data.width),

@@ -7,7 +7,7 @@ import com.cmdpro.databank.instanceddimension.InstancedDimension;
 import com.cmdpro.databank.instanceddimension.PlayerLastLocationData;
 import com.cmdpro.databank.misc.VersionChangeHelper;
 import com.mojang.serialization.Codec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -23,22 +23,22 @@ public class AttachmentTypeRegistry {
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES,
             Databank.MOD_ID);
     public static final Supplier<AttachmentType<Optional<BlockEntity>>> BINDING_BLOCK =
-            register("binding_block", () -> AttachmentType.builder(() -> Optional.ofNullable((BlockEntity)null)).build());
+            register("binding_block", () -> AttachmentType.builder(Optional::<BlockEntity>empty).build());
 
     public static final Supplier<AttachmentType<HashMap<String, String>>> MOD_VERSIONS =
-            register("mod_versions", () -> AttachmentType.builder(() -> new HashMap<String, String>()).serialize(Codec.unboundedMap(Codec.STRING, Codec.STRING).xmap(HashMap::new, HashMap::new)).copyOnDeath().build());
+            register("mod_versions", () -> AttachmentType.builder(() -> new HashMap<String, String>()).serialize(Codec.unboundedMap(Codec.STRING, Codec.STRING).fieldOf("Versions").xmap(HashMap::new, HashMap::new)).copyOnDeath().build());
 
     public static final Supplier<AttachmentType<Optional<DialogueInstance>>> CURRENT_DIALOGUE =
-            register("current_dialogue", () -> AttachmentType.builder(() -> Optional.ofNullable((DialogueInstance)null)).build());
+            register("current_dialogue", () -> AttachmentType.builder(Optional::<DialogueInstance>empty).build());
 
     public static final Supplier<AttachmentType<ArrayList<InstancedDimension.Instance>>> INSTANCED_DIMENSIONS =
-            register("instanced_dimensions", () -> AttachmentType.builder(() -> new ArrayList<InstancedDimension.Instance>()).serialize(InstancedDimension.Instance.CODEC.listOf().xmap(ArrayList::new, ArrayList::new)).build());
+            register("instanced_dimensions", () -> AttachmentType.builder(() -> new ArrayList<InstancedDimension.Instance>()).serialize(InstancedDimension.Instance.CODEC.listOf().fieldOf("Dimensions").xmap(ArrayList::new, ArrayList::new)).build());
 
     public static final Supplier<AttachmentType<ArrayList<InstancedDimension.Instance>>> TEMP_INSTANCED_DIMENSIONS =
-            register("temp_instanced_dimensions", () -> AttachmentType.builder(() -> new ArrayList<InstancedDimension.Instance>()).serialize(InstancedDimension.Instance.CODEC.listOf().xmap(ArrayList::new, ArrayList::new)).build());
+            register("temp_instanced_dimensions", () -> AttachmentType.builder(() -> new ArrayList<InstancedDimension.Instance>()).serialize(InstancedDimension.Instance.CODEC.listOf().fieldOf("Dimensions").xmap(ArrayList::new, ArrayList::new)).build());
 
     public static final Supplier<AttachmentType<Optional<PlayerLastLocationData>>> LAST_LOCATION_DATA =
-            register("last_location_data", () -> AttachmentType.builder(() -> Optional.ofNullable((PlayerLastLocationData)null)).serialize(PlayerLastLocationData.CODEC.xmap(Optional::of, Optional::get), Optional::isPresent).build());
+            register("last_location_data", () -> AttachmentType.builder(Optional::<PlayerLastLocationData>empty).serialize(PlayerLastLocationData.CODEC.optionalFieldOf("LastLocation")).build());
 
     private static <T extends AttachmentType<?>> Supplier<T> register(final String name, final Supplier<T> attachment) {
         return ATTACHMENT_TYPES.register(name, attachment);

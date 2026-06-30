@@ -1,55 +1,44 @@
 package com.cmdpro.databank.model.entity;
 
-import com.cmdpro.databank.model.DatabankModels;
-import com.cmdpro.databank.model.ModelPose;
-import com.cmdpro.databank.model.blockentity.DatabankBlockEntityModel;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
-import net.minecraft.client.animation.AnimationDefinition;
-import net.minecraft.client.model.HierarchicalModel;
-import net.minecraft.client.model.geom.ModelLayerLocation;
-import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.model.geom.builders.LayerDefinition;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 
-public abstract class DatabankEntityRenderer<T extends Entity> extends EntityRenderer<T> {
-    private DatabankEntityModel<T> model;
-    public DatabankEntityRenderer(EntityRendererProvider.Context context, DatabankEntityModel<T> model, float shadowRadius) {
+public abstract class DatabankEntityRenderer<T extends Entity, S extends EntityRenderState> extends EntityRenderer<T, S> {
+    private final DatabankEntityModel<S> model;
+
+    public DatabankEntityRenderer(EntityRendererProvider.Context context, DatabankEntityModel<S> model, float shadowRadius) {
         super(context);
         this.shadowRadius = shadowRadius;
         this.model = model;
     }
 
     @Override
-    public void render(T pEntity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        super.render(pEntity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+    public void submit(S state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+        super.submit(state, poseStack, submitNodeCollector, camera);
         poseStack.pushPose();
-        DatabankEntityModel<T> model = getModel(pEntity);
-        model.setupModelPose(pEntity, partialTick);
-        model.render(pEntity, partialTick, poseStack, bufferSource, packedLight, getOverlayCoords(pEntity), 0xFFFFFFFF, new Vec3(1, 1, 1));
+        DatabankEntityModel<S> model = getModel(state);
+        model.setupModelPose(state);
+        model.submit(state, poseStack, submitNodeCollector, getOverlayCoords(state), 0xFFFFFFFF, new Vec3(1, 1, 1));
         poseStack.popPose();
     }
-    public int getOverlayCoords(T entity) {
+
+    public int getOverlayCoords(S state) {
         return OverlayTexture.pack(OverlayTexture.u(0), OverlayTexture.v(false));
     }
 
-    public DatabankEntityModel<T> getModel() {
+    public DatabankEntityModel<S> getModel() {
         return model;
     }
-    public DatabankEntityModel<T> getModel(T entity) {
+
+    public DatabankEntityModel<S> getModel(S state) {
         return getModel();
     }
 }

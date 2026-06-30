@@ -1,11 +1,6 @@
 package com.cmdpro.databank.model.animation;
 
 import com.cmdpro.databank.model.DatabankAnimation;
-import net.minecraft.client.animation.AnimationDefinition;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.AnimationState;
-
-import java.util.List;
 
 public class DatabankAnimationDefinition {
     public String id;

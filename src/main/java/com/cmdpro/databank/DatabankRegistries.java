@@ -12,13 +12,13 @@ import com.cmdpro.databank.worldgui.components.WorldGuiComponentType;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 import net.neoforged.neoforge.registries.RegistryBuilder;
 
-@EventBusSubscriber(modid = Databank.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Databank.MOD_ID)
 public class DatabankRegistries {
     public static ResourceKey<Registry<MultiblockPredicateSerializer<?>>> MULTIBLOCK_PREDICATE_REGISTRY_KEY = ResourceKey.createRegistryKey(Databank.locate("multiblock_predicates"));
     public static ResourceKey<Registry<WorldGuiType>> WORLD_GUI_TYPE_REGISTRY_KEY = ResourceKey.createRegistryKey(Databank.locate("world_gui_types"));
@@ -39,6 +39,7 @@ public class DatabankRegistries {
     public static Registry<MapCodec<? extends DatabankPartData>> MODEL_PART_TYPE_REGISTRY = new RegistryBuilder<>(MODEL_PART_TYPE_REGISTRY_KEY).create();
     public static Registry<MapCodec<? extends DialogueStyle>> DIALOGUE_STYLE_REGISTRY = new RegistryBuilder<>(DIALOGUE_STYLE_REGISTRY_KEY).create();
     public static Registry<DialogueChoiceAction.Codecs> DIALOGUE_CHOICE_ACTION_REGISTRY = new RegistryBuilder<>(DIALOGUE_CHOICE_ACTION_REGISTRY_KEY).create();
+
     @SubscribeEvent
     public static void registerRegistries(NewRegistryEvent event) {
         event.register(MULTIBLOCK_PREDICATE_REGISTRY);

@@ -8,7 +8,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.neoforged.neoforge.common.conditions.ConditionalOps;
 import net.neoforged.neoforge.common.conditions.ICondition;
@@ -24,7 +24,7 @@ public class MusicSerializer {
             Codec.INT.fieldOf("priority").forGetter((controller) -> controller.priority)
     ).apply(instance, MusicController::new));
     public static final Codec<Optional<WithConditions<MusicController>>> CODEC = ConditionalOps.createConditionalCodecWithConditions(ORIGINAL_CODEC);
-    public MusicController read(ResourceLocation entryId, JsonObject json) {
+    public MusicController read(Identifier entryId, JsonObject json) {
         return ICondition.getWithWithConditionsCodec(CODEC, JsonOps.INSTANCE, json).orElse(null);
     }
 }

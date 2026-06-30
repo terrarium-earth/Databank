@@ -5,7 +5,7 @@ import com.cmdpro.databank.music.MusicSerializer;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class AndMusicCondition extends MusicCondition {
     public MusicCondition conditionA;

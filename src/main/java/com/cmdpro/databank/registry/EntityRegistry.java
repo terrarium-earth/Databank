@@ -6,6 +6,8 @@ import com.cmdpro.databank.worldgui.WorldGuiEntity;
 import com.cmdpro.databank.worldgui.renderer.WorldGuiRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.GameMasterBlockItem;
@@ -22,10 +24,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-@EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID)
 public class EntityRegistry {
     public static DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(BuiltInRegistries.ENTITY_TYPE, Databank.MOD_ID);
-    public static final Supplier<EntityType<WorldGuiEntity>> WORLD_GUI = register("world_gui", () -> EntityType.Builder.of((EntityType.EntityFactory<WorldGuiEntity>) WorldGuiEntity::new, MobCategory.MISC).sized(0f, 0f).build(Databank.MOD_ID + ":" + "world_gui"));
+    public static final Supplier<EntityType<WorldGuiEntity>> WORLD_GUI = register("world_gui", () -> EntityType.Builder.of((EntityType.EntityFactory<WorldGuiEntity>) WorldGuiEntity::new, MobCategory.MISC).sized(0f, 0f).build(ResourceKey.create(Registries.ENTITY_TYPE, Databank.locate("world_gui"))));
 
     private static <T extends EntityType<?>> Supplier<T> register(final String name, final Supplier<T> entity) {
         return ENTITY_TYPES.register(name, entity);

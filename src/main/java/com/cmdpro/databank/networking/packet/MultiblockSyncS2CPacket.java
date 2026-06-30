@@ -9,16 +9,16 @@ import com.mojang.datafixers.types.Type;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.Map;
 
-public record MultiblockSyncS2CPacket(Map<ResourceLocation, Multiblock> multiblocks) implements Message {
+public record MultiblockSyncS2CPacket(Map<Identifier, Multiblock> multiblocks) implements Message {
 
     public static void write(RegistryFriendlyByteBuf buf, MultiblockSyncS2CPacket obj) {
-        buf.writeMap(obj.multiblocks, ResourceLocation.STREAM_CODEC, (pBuffer, pValue) -> MultiblockSerializer.STREAM_CODEC.encode((RegistryFriendlyByteBuf)pBuffer, pValue));
+        buf.writeMap(obj.multiblocks, Identifier.STREAM_CODEC, (pBuffer, pValue) -> MultiblockSerializer.STREAM_CODEC.encode((RegistryFriendlyByteBuf)pBuffer, pValue));
     }
 
     @Override
@@ -28,7 +28,7 @@ public record MultiblockSyncS2CPacket(Map<ResourceLocation, Multiblock> multiblo
     public static final Type<MultiblockSyncS2CPacket> TYPE = new Type<>(Databank.locate("multiblock_sync"));
 
     public static MultiblockSyncS2CPacket read(RegistryFriendlyByteBuf buf) {
-        Map<ResourceLocation, Multiblock> multiblocks = buf.readMap(ResourceLocation.STREAM_CODEC, (pBuffer) -> MultiblockSerializer.STREAM_CODEC.decode((RegistryFriendlyByteBuf)pBuffer));
+        Map<Identifier, Multiblock> multiblocks = buf.readMap(Identifier.STREAM_CODEC, (pBuffer) -> MultiblockSerializer.STREAM_CODEC.decode((RegistryFriendlyByteBuf)pBuffer));
         return new MultiblockSyncS2CPacket(multiblocks);
     }
 

@@ -1,8 +1,8 @@
 package com.cmdpro.databank.temperature;
 
-import com.cmdpro.databank.Databank;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 
@@ -24,7 +24,7 @@ public class TemperatureUtil {
 
         // time of day and weather
         if (world.canSeeSky(pos)) {
-            float angle = world.getSunAngle(0);
+            float angle = world.environmentAttributes().getValue(EnvironmentAttributes.SUN_ANGLE, pos) * (float) (Math.PI / 180.0);
             float sunIntensity = Math.clamp((float) (1.0f*(Math.cos(angle*2f+0.2f))), 0f, 1f);
 
             sunIntensity *= (float) (1.0d - world.getRainLevel(0)*5.0f / 16.0d);

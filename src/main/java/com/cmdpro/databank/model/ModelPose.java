@@ -58,7 +58,7 @@ public class ModelPose {
             }
         }
         public void offsetPosition(Vector3f offset) {
-            pos.add(-offset.x, -offset.y, offset.z);
+            pos.add(-offset.x(), -offset.y(), offset.z());
         }
         public void offsetRotation(Vector3f offset) {
             rotation.add(offset);
@@ -66,10 +66,8 @@ public class ModelPose {
         public void offsetScale(Vector3f offset) {
             scale.add(offset);
         }
-        public void render(DatabankModel model, float partialTick, PoseStack pPoseStack, VertexConsumer pConsumer, int pPackedLight, int pPackedOverlay, int pColor, Vec3 normalMult, boolean isShadedByNormal, Quaternionf quaternionf) {
-            pPoseStack.pushPose();
-            part.data.render(this, model, partialTick, pPoseStack, pConsumer, pPackedLight, pPackedOverlay, pColor, normalMult, isShadedByNormal, quaternionf);
-            pPoseStack.popPose();
+        public void render(DatabankModel model, PoseStack.Pose pose, VertexConsumer pConsumer, int pPackedLight, int pPackedOverlay, int pColor, Vec3 normalMult, boolean isShadedByNormal, Quaternionf quaternionf) {
+            part.data.render(this, model, pose, pConsumer, pPackedLight, pPackedOverlay, pColor, normalMult, isShadedByNormal, quaternionf);
         }
         public Matrix4f getMatrixWithParents(boolean ignoreGroups) {
             List<ModelPosePart> parts = new ArrayList<>();
@@ -88,7 +86,7 @@ public class ModelPose {
                     continue;
                 }
                 offset.add(new Vector3f(i.pos).rotate(rotation));
-                rotation.rotateXYZ(i.rotation.x, i.rotation.y, i.rotation.z);
+                rotation.rotateXYZ(i.rotation.x(), i.rotation.y(), i.rotation.z());
             }
             Matrix4f mat4 = new Matrix4f();
             mat4.translate(offset);

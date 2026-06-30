@@ -11,23 +11,23 @@ import com.cmdpro.databank.networking.Message;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.Map;
 
-public record HiddenSyncS2CPacket(Map<ResourceLocation, Hidden> hidden) implements Message {
+public record HiddenSyncS2CPacket(Map<Identifier, Hidden> hidden) implements Message {
 
     public static HiddenSyncS2CPacket read(FriendlyByteBuf buf) {
-        Map<ResourceLocation, Hidden> blocks = buf.readMap(FriendlyByteBuf::readResourceLocation, (buf2) -> HiddenSerializer.STREAM_CODEC.decode((RegistryFriendlyByteBuf)buf2));
-        for (Map.Entry<ResourceLocation, Hidden> i : blocks.entrySet()) {
+        Map<Identifier, Hidden> blocks = buf.readMap(FriendlyByteBuf::readIdentifier, (buf2) -> HiddenSerializer.STREAM_CODEC.decode((RegistryFriendlyByteBuf)buf2));
+        for (Map.Entry<Identifier, Hidden> i : blocks.entrySet()) {
             i.getValue().id = i.getKey();
         }
         return new HiddenSyncS2CPacket(blocks);
     }
     public static void write(FriendlyByteBuf buf, HiddenSyncS2CPacket obj) {
-        buf.writeMap(obj.hidden, FriendlyByteBuf::writeResourceLocation, (buf2, val) -> HiddenSerializer.STREAM_CODEC.encode((RegistryFriendlyByteBuf)buf2, val));
+        buf.writeMap(obj.hidden, FriendlyByteBuf::writeIdentifier, (buf2, val) -> HiddenSerializer.STREAM_CODEC.encode((RegistryFriendlyByteBuf)buf2, val));
     }
     public static final Type<HiddenSyncS2CPacket> TYPE = new Type<>(Databank.locate("hidden_block_sync"));
     @Override

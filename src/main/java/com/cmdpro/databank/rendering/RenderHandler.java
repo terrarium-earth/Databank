@@ -4,9 +4,8 @@ import com.cmdpro.databank.Databank;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
-import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -18,46 +17,46 @@ import java.util.SequencedMap;
 
 @EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID)
 public class RenderHandler {
+    static MultiBufferSource.BufferSource bufferSource = null;
+
     public static Matrix4f matrix4f;
-    public static float fogStart;
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage().equals(RenderLevelStageEvent.Stage.AFTER_PARTICLES)) {
-            matrix4f = new Matrix4f(RenderSystem.getModelViewMatrix());
-            fogStart = RenderSystem.getShaderFogStart();
-        }
+    public static void onRenderLevelStage(RenderLevelStageEvent.AfterTranslucentParticles event) {
+        matrix4f = new Matrix4f(RenderSystem.getModelViewMatrix());
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onRenderLevelStage(RenderLevelStageEvent.AfterLevel event) {
         if (ShaderHelper.shouldUseAlternateRendering()) {
-            if (event.getStage().equals(RenderLevelStageEvent.Stage.AFTER_LEVEL)) {
-                RenderSystem.getModelViewStack().pushMatrix().set(RenderHandler.matrix4f);
-                RenderSystem.applyModelViewMatrix();
-                RenderSystem.setShaderFogStart(fogStart);
-                for (RenderType i : RenderTypeHandler.normalRenderTypes) {
-                    createBufferSource().endBatch(i);
-                }
-                for (RenderType i : RenderTypeHandler.particleRenderTypes) {
-                    createBufferSource().endBatch(i);
-                }
-                FogRenderer.setupNoFog();
-                RenderSystem.getModelViewStack().popMatrix();
-                RenderSystem.applyModelViewMatrix();
+            RenderSystem.getModelViewStack().pushMatrix().set(RenderHandler.matrix4f);
+            for (RenderType i : RenderTypeHandler.normalRenderTypes) {
+                createBufferSource().endBatch(i);
             }
-        } else {
-            if (event.getStage().equals(RenderLevelStageEvent.Stage.AFTER_WEATHER)) {
-                for (RenderType i : RenderTypeHandler.normalRenderTypes) {
-                    createBufferSource().endBatch(i);
-                }
-                for (RenderType i : RenderTypeHandler.particleRenderTypes) {
-                    createBufferSource().endBatch(i);
-                }
+            for (RenderType i : RenderTypeHandler.particleRenderTypes) {
+                createBufferSource().endBatch(i);
+            }
+            RenderSystem.getModelViewStack().popMatrix();
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onRenderLevelStage(RenderLevelStageEvent.AfterWeather event) {
+        if (!ShaderHelper.shouldUseAlternateRendering()) {
+            for (RenderType i : RenderTypeHandler.normalRenderTypes) {
+                createBufferSource().endBatch(i);
+            }
+            for (RenderType i : RenderTypeHandler.particleRenderTypes) {
+                createBufferSource().endBatch(i);
             }
         }
     }
-    static MultiBufferSource.BufferSource bufferSource = null;
+
     public static MultiBufferSource.BufferSource createBufferSource() {
         if (bufferSource == null) {
             SequencedMap<RenderType, ByteBufferBuilder> buffers = new Object2ObjectLinkedOpenHashMap<>();
             for (RenderType i : RenderTypeHandler.renderTypes) {
-                buffers.put(i, new ByteBufferBuilder(i.bufferSize));
+                buffers.put(i, new ByteBufferBuilder(i.bufferSize()));
             }
             bufferSource = MultiBufferSource.immediateWithBuffers(buffers, new ByteBufferBuilder(256));
         }

@@ -10,12 +10,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-@EventBusSubscriber(modid = Databank.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Databank.MOD_ID)
 public class ModMessages {
     public class Handler {
         public static <T extends CustomPacketPayload> void handle(T message, IPayloadContext ctx) {
@@ -38,7 +39,7 @@ public class ModMessages {
         }
         public class Server {
             public static <T extends Message> void handle(T message, IPayloadContext ctx) {
-                message.handleServer(ctx.player().getServer(), (ServerPlayer)ctx.player(), ctx);
+                message.handleServer(ctx.player().level().getServer(), (ServerPlayer)ctx.player(), ctx);
             }
         }
         public abstract interface Reader<T extends Message> {
@@ -77,7 +78,7 @@ public class ModMessages {
     }
 
     public static <T extends Message> void sendToServer(T message) {
-        PacketDistributor.sendToServer(message);
+        ClientPacketDistributor.sendToServer(message);
     }
 
     public static <T extends Message> void sendToPlayer(T message, ServerPlayer player) {

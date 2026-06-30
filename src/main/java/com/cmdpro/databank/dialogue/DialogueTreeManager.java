@@ -6,8 +6,10 @@ import com.cmdpro.databank.music.MusicSerializer;
 import com.google.gson.*;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.FileToIdConverter;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.*;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.neoforge.common.conditions.ICondition;
@@ -21,13 +23,12 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-public class DialogueTreeManager extends SimpleJsonResourceReloadListener {
-    public static HashMap<ResourceLocation, DialogueTree> trees = new HashMap<>();
-    protected static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
+public class DialogueTreeManager extends SimpleJsonResourceReloadListener<JsonElement> {
+    public static HashMap<Identifier, DialogueTree> trees = new HashMap<>();
 
     public static DialogueTreeManager instance;
     protected DialogueTreeManager() {
-        super(GSON, "databank/dialogue/trees");
+        super(ExtraCodecs.JSON, FileToIdConverter.json("databank/dialogue/trees"));
     }
     public static DialogueTreeManager getOrCreateInstance() {
         if (instance == null) {
@@ -36,11 +37,11 @@ public class DialogueTreeManager extends SimpleJsonResourceReloadListener {
         return instance;
     }
     @Override
-    protected void apply(Map<ResourceLocation, JsonElement> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
+    protected void apply(Map<Identifier, JsonElement> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
         trees = new HashMap<>();
         Databank.LOGGER.info("[DATABANK] Adding Databank Dialogue Trees");
-        for (Map.Entry<ResourceLocation, JsonElement> i : pObject.entrySet()) {
-            ResourceLocation location = i.getKey();
+        for (Map.Entry<Identifier, JsonElement> i : pObject.entrySet()) {
+            Identifier location = i.getKey();
             if (location.getPath().startsWith("_")) {
                 continue;
             }

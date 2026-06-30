@@ -4,7 +4,7 @@ import com.cmdpro.databank.Databank;
 import com.google.gson.*;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.Resource;
@@ -25,17 +25,12 @@ import java.util.concurrent.Executor;
 
 public class DatabankModels {
     public static final int CURRENT_MODEL_VERSION = 1;
-    public static void init() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc == null) {
-            return;
-        }
-        if (mc.getResourceManager() instanceof ReloadableResourceManager resourceManager)
-            resourceManager.registerReloadListener(DatabankModels::reload);
-    }
 
     // Temporary, Remove at some point, only here to stop things from breaking when transitioning the jsons
     static List<String> oldJsons = new ArrayList<>();
+    public static HashMap<Identifier, DatabankModel> models = new HashMap<>();
+    protected static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
+
     // Temporary, Remove at some point, only here to stop things from breaking when transitioning the jsons
     protected static JsonObject fixJson(String name, JsonObject json) {
         JsonObject newJson = json;
@@ -62,6 +57,7 @@ public class DatabankModels {
         }
         return newJson;
     }
+
     // Temporary, Remove at some point, only here to stop things from breaking when transitioning the jsons
     private static JsonObject updateV0Part(JsonObject part) {
         JsonObject newJson = new JsonObject();
@@ -150,19 +146,21 @@ public class DatabankModels {
         }
         return newJson;
     }
-    public static HashMap<ResourceLocation, DatabankModel> models = new HashMap<>();
-    protected static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
-    public static CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier stage, ResourceManager resourceManager,
-                                                 ProfilerFiller preparationsProfiler, ProfilerFiller reloadProfiler, Executor backgroundExecutor,
-                                                 Executor gameExecutor) {
-        return CompletableFuture.supplyAsync(() -> resourceManager.listResources("databank/models", name -> name.toString().endsWith(".json")), backgroundExecutor)
+
+    public static CompletableFuture<Void> reload(
+        PreparableReloadListener.SharedState currentReload,
+        Executor taskExecutor,
+        PreparableReloadListener.PreparationBarrier preparationBarrier,
+        Executor reloadExecutor
+    ) {
+        return CompletableFuture.supplyAsync(() -> currentReload.resourceManager().listResources("databank/models", name -> name.toString().endsWith(".json")), taskExecutor)
                 .thenApply(resources -> {
-                    Map<ResourceLocation, CompletableFuture<DatabankModel>> tasks = new HashMap<>();
-                    for (ResourceLocation i : resources.keySet()) {
+                    Map<Identifier, CompletableFuture<DatabankModel>> tasks = new HashMap<>();
+                    for (Identifier i : resources.keySet()) {
                         tasks.put(i, CompletableFuture.supplyAsync(() -> {
                             JsonObject json;
                             try {
-                                Resource resource = resourceManager.getResourceOrThrow(i);
+                                Resource resource = currentReload.resourceManager().getResourceOrThrow(i);
                                 InputStream stream = resource.open();
                                 json = GsonHelper.fromJson(GSON, IOUtils.toString(stream, Charset.defaultCharset()), JsonObject.class);
                             } catch (IOException e) {
@@ -175,9 +173,9 @@ public class DatabankModels {
                     }
                     return tasks;
                 })
-                .thenCompose(stage::wait).thenAccept((tasks) -> {
-                    HashMap<ResourceLocation, DatabankModel> models = new HashMap<ResourceLocation, DatabankModel>();
-                    for (Map.Entry<ResourceLocation, CompletableFuture<DatabankModel>> i : tasks.entrySet()) {
+                .thenCompose(preparationBarrier::wait).thenAccept((tasks) -> {
+                    HashMap<Identifier, DatabankModel> models = new HashMap<Identifier, DatabankModel>();
+                    for (Map.Entry<Identifier, CompletableFuture<DatabankModel>> i : tasks.entrySet()) {
                         String path = i.getKey().getPath().replaceFirst("databank/models/", "");
                         path = path.substring(0, path.length()-5);
                         models.put(i.getKey().withPath(path), i.getValue().join());

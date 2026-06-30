@@ -13,7 +13,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -21,7 +21,7 @@ public class BlockstateMultiblockPredicateSerializer extends MultiblockPredicate
     public static final BlockstateMultiblockPredicateSerializer INSTANCE = new BlockstateMultiblockPredicateSerializer();
     public static BlockState getBlockStateFromBuf(FriendlyByteBuf buf) {
         try {
-            return BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK.asLookup(), buf.readUtf(), false).blockState();
+            return BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, buf.readUtf(), false).blockState();
         } catch (Exception e) {
             Databank.LOGGER.error("[DATABANK ERROR] "+e.getMessage());
             return Blocks.AIR.defaultBlockState();
@@ -37,7 +37,7 @@ public class BlockstateMultiblockPredicateSerializer extends MultiblockPredicate
             Codec.STRING.fieldOf("state").forGetter(page -> BlockStateParser.serialize(page.self))
     ).apply(instance, (state) -> {
         try {
-            return new BlockstateMultiblockPredicate(BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK.asLookup(), state, false).blockState());
+            return new BlockstateMultiblockPredicate(BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, state, false).blockState());
         } catch (CommandSyntaxException e) {
             throw new RuntimeException(e);
         }

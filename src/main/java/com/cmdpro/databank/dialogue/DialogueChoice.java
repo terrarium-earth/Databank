@@ -6,8 +6,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
@@ -17,20 +18,20 @@ public class DialogueChoice {
             ComponentSerialization.CODEC.fieldOf("text").forGetter((obj) -> obj.text),
             DialogueChoiceAction.CODEC.listOf().fieldOf("actions").forGetter((obj) -> obj.actions)
     ).apply(builder, DialogueChoice::new));
-    public static final StreamCodec<RegistryFriendlyByteBuf, DialogueChoice> STREAM_CODEC = StreamCodec.of((buf, obj) -> {
-        ComponentSerialization.STREAM_CODEC.encode(buf, obj.text);
-        buf.writeCollection(obj.actions, (buf2, obj2) -> {
-            buf.writeResourceLocation(DatabankRegistries.DIALOGUE_CHOICE_ACTION_REGISTRY.getKey(obj2.getCodecs()));
-            obj2.getStreamCodec().encode((RegistryFriendlyByteBuf)buf2, obj2);
-        });
-    }, (buf) -> {
-        Component text = ComponentSerialization.STREAM_CODEC.decode(buf);
-        List<DialogueChoiceAction> actions = buf.readList((buf2) -> {
-            ResourceLocation dialogueActionType = buf.readResourceLocation();
-            return DatabankRegistries.DIALOGUE_CHOICE_ACTION_REGISTRY.get(dialogueActionType).streamCodec().decode((RegistryFriendlyByteBuf)buf2);
-        });
-        return new DialogueChoice(text, actions);
-    });
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, DialogueChoice> STREAM_CODEC = StreamCodec.composite(
+        ComponentSerialization.STREAM_CODEC,
+        (obj) -> obj.text,
+
+        ByteBufCodecs
+            .registry(DatabankRegistries.DIALOGUE_CHOICE_ACTION_REGISTRY.key())
+            .dispatch(DialogueChoiceAction::getCodecs, DialogueChoiceAction.Codecs::streamCodec)
+            .apply(ByteBufCodecs.list()),
+        (obj) -> obj.actions,
+
+        DialogueChoice::new
+    );
+
     public DialogueChoice(Component text, List<DialogueChoiceAction> actions) {
         this.text = text;
         this.actions = actions;

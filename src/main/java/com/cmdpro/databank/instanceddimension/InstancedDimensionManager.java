@@ -1,45 +1,41 @@
 package com.cmdpro.databank.instanceddimension;
 
 import com.cmdpro.databank.Databank;
-import com.cmdpro.databank.megastructures.Megastructure;
-import com.cmdpro.databank.music.MusicSerializer;
 import com.cmdpro.databank.registry.AttachmentTypeRegistry;
-import com.google.gson.*;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.mojang.serialization.JsonOps;
+import net.minecraft.resources.FileToIdConverter;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.dimension.LevelStem;
-import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.common.conditions.ICondition;
 import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.*;
 
 @EventBusSubscriber(modid = Databank.MOD_ID)
-public class InstancedDimensionManager extends SimpleJsonResourceReloadListener {
-    public static HashMap<ResourceLocation, InstancedDimension> instanceddimensions = new HashMap<>();
-    protected static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
+public class InstancedDimensionManager extends SimpleJsonResourceReloadListener<JsonElement> {
+    public static HashMap<Identifier, InstancedDimension> instanceddimensions = new HashMap<>();
 
     public static InstancedDimensionManager instance;
     protected InstancedDimensionManager() {
-        super(GSON, "databank/instanced_dimensions");
+        super(ExtraCodecs.JSON, FileToIdConverter.json("databank/instanced_dimensions"));
     }
     public static InstancedDimensionManager getOrCreateInstance() {
         if (instance == null) {
@@ -48,11 +44,11 @@ public class InstancedDimensionManager extends SimpleJsonResourceReloadListener 
         return instance;
     }
     @Override
-    protected void apply(Map<ResourceLocation, JsonElement> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
+    protected void apply(Map<Identifier, JsonElement> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
         instanceddimensions = new HashMap<>();
         Databank.LOGGER.info("[DATABANK] Adding Databank Instanced Dimensions");
-        for (Map.Entry<ResourceLocation, JsonElement> i : pObject.entrySet()) {
-            ResourceLocation location = i.getKey();
+        for (Map.Entry<Identifier, JsonElement> i : pObject.entrySet()) {
+            Identifier location = i.getKey();
             if (location.getPath().startsWith("_")) {
                 continue;
             }
@@ -86,12 +82,15 @@ public class InstancedDimensionManager extends SimpleJsonResourceReloadListener 
     }
     @SubscribeEvent
     public static void onPlayerTravel(EntityTravelToDimensionEvent event) {
-        if (!(event.getEntity() instanceof Player) || event.getEntity().level().isClientSide) {
+        Level level = event.getEntity().level();
+
+        if (!(event.getEntity() instanceof Player) || level.isClientSide()) {
             return;
         }
+
         ResourceKey<Level> to = event.getDimension();
-        ResourceKey<Level> from = event.getEntity().level().dimension();
-        ServerLevel overworld = event.getEntity().getServer().overworld();
+        ResourceKey<Level> from = level.dimension();
+        ServerLevel overworld = level.getServer().overworld();
         List<InstancedDimension.Instance> instances = getInstances(overworld);
         boolean inDimension = false;
         boolean wasInDimension = false;
@@ -126,9 +125,9 @@ public class InstancedDimensionManager extends SimpleJsonResourceReloadListener 
     @SubscribeEvent
     public static void playerLogOut(PlayerEvent.PlayerLoggedOutEvent event) {
         Player player = event.getEntity();
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) return;
-        if (server.isSingleplayerOwner(player.getGameProfile())) {
+        if (server.isSingleplayerOwner(player.nameAndId())) {
             Level overworld = server.overworld();
             List<InstancedDimension.Instance> instances = overworld.getData(AttachmentTypeRegistry.TEMP_INSTANCED_DIMENSIONS);
             if (instances.stream().anyMatch((i) -> i.key.equals(player.level().dimension()))) {
@@ -144,7 +143,7 @@ public class InstancedDimensionManager extends SimpleJsonResourceReloadListener 
             outside = data.get().level;
             pos = data.get().pos;
         }
-        player.teleportTo(server.getLevel(outside), pos.x, pos.y, pos.z, Set.of(), player.yRotO, player.xRotO);
+        player.teleportTo(server.getLevel(outside), pos.x(), pos.y(), pos.z(), Set.of(), player.yRotO, player.xRotO, true);
     }
     public static List<InstancedDimension.Instance> getInstances(Level level) {
         List<InstancedDimension.Instance> instances = new ArrayList<>(level.getData(AttachmentTypeRegistry.TEMP_INSTANCED_DIMENSIONS));

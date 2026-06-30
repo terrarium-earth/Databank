@@ -2,7 +2,7 @@ package com.cmdpro.databank.rendering;
 
 import com.cmdpro.databank.Databank;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -70,7 +70,7 @@ public class RenderTargetPool {
         }
         pools.remove(this);
     }
-    public void markUse(RenderTarget target, ResourceLocation id) {
+    public void markUse(RenderTarget target, Identifier id) {
         PooledRenderTarget pooledRenderTarget = pool.get(target);
         if (pooledRenderTarget != null) {
             pooledRenderTarget.time = 0;
@@ -79,13 +79,13 @@ public class RenderTargetPool {
             }
         }
     }
-    public void unmarkUse(RenderTarget target, ResourceLocation id) {
+    public void unmarkUse(RenderTarget target, Identifier id) {
         PooledRenderTarget pooledRenderTarget = pool.get(target);
         if (pooledRenderTarget != null) {
             pooledRenderTarget.uses.remove(id);
         }
     }
-    public List<ResourceLocation> getUses(RenderTarget target) {
+    public List<Identifier> getUses(RenderTarget target) {
         PooledRenderTarget pooledRenderTarget = pool.get(target);
         if (pooledRenderTarget != null) {
             return pooledRenderTarget.uses;
@@ -99,17 +99,17 @@ public class RenderTargetPool {
         }
         return false;
     }
-    public ResourceLocation generateRandomUseId(String modId) {
+    public Identifier generateRandomUseId(String modId) {
         return generateRandomUseId(modId, "");
     }
-    public ResourceLocation generateRandomUseId(String modId, String prefix) {
-        return ResourceLocation.fromNamespaceAndPath(modId, prefix + "-" + UUID.randomUUID());
+    public Identifier generateRandomUseId(String modId, String prefix) {
+        return Identifier.fromNamespaceAndPath(modId, prefix + "-" + UUID.randomUUID());
     }
     private static class PooledRenderTarget {
         public int time;
         public int maxTime;
         public RenderTarget target;
-        public List<ResourceLocation> uses;
+        public List<Identifier> uses;
         public PooledRenderTarget(int time, int maxTime, RenderTarget target) {
             this.time = time;
             this.maxTime = maxTime;

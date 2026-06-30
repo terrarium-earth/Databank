@@ -15,7 +15,7 @@ import net.minecraft.client.multiplayer.ClientAdvancements;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
@@ -33,8 +33,8 @@ import java.util.*;
 public class DatabankUtils {
 
     private static final Set<UUID> scheduledUpdateHidden = new HashSet<>();
-    private static final Map<UUID, List<ResourceLocation>> playerUnlockedCache = new HashMap<>();
-    private static final Map<UUID, Map<ResourceLocation, Boolean>> scheduledUpdateAdvancement = new HashMap<>();
+    private static final Map<UUID, List<Identifier>> playerUnlockedCache = new HashMap<>();
+    private static final Map<UUID, Map<Identifier, Boolean>> scheduledUpdateAdvancement = new HashMap<>();
 
     public static void scheduleUpdateHidden(Player player) {
         scheduledUpdateHidden.add(player.getUUID());
@@ -52,10 +52,10 @@ public class DatabankUtils {
         }
 
         if (!scheduledUpdateAdvancement.isEmpty()) {
-            for(Map.Entry<UUID, Map<ResourceLocation, Boolean>> entry : scheduledUpdateAdvancement.entrySet()) {
+            for(Map.Entry<UUID, Map<Identifier, Boolean>> entry : scheduledUpdateAdvancement.entrySet()) {
                 ServerPlayer player = players.getPlayer(entry.getKey());
                 if (player != null && ! player.hasDisconnected()) {
-                    for(Map.Entry<ResourceLocation, Boolean> e : entry.getValue().entrySet()) {
+                    for(Map.Entry<Identifier, Boolean> e : entry.getValue().entrySet()) {
                         ModMessages.sendToPlayer(e.getValue()
                                 ? new UnlockAdvancementS2CPacket(e.getKey())
                                 : new LockAdvancementS2CPacket(e.getKey()),
@@ -102,8 +102,8 @@ public class DatabankUtils {
             scheduledUpdateHidden.remove(id);
 
         // Compute the player's list of unlocks.
-        List<ResourceLocation> unlocked = new ArrayList<>();
-        for (Map.Entry<ResourceLocation, Hidden> i : HiddenManager.hidden.entrySet()) {
+        List<Identifier> unlocked = new ArrayList<>();
+        for (Map.Entry<Identifier, Hidden> i : HiddenManager.hidden.entrySet()) {
             if (i.getValue().condition.isUnlocked(player)) {
                 unlocked.add(i.getKey());
             }
@@ -111,7 +111,7 @@ public class DatabankUtils {
 
         // If we have a cached state for this player, and it matches the new state, then we don't actually
         // need to send an update to the client.
-        List<ResourceLocation> oldUnlocked = playerUnlockedCache.get(id);
+        List<Identifier> oldUnlocked = playerUnlockedCache.get(id);
         if (oldUnlocked != null && oldUnlocked.size() == unlocked.size() && unlocked.containsAll(oldUnlocked))
             return;
 
@@ -119,10 +119,10 @@ public class DatabankUtils {
         playerUnlockedCache.put(id, unlocked);
         ModMessages.sendToPlayer(new UnlockedHiddenSyncS2CPacket(unlocked, updateListeners), (ServerPlayer)player);
     }
-    public static void unlockHiddenBlock(Player player, ResourceLocation hiddenBlock) {
+    public static void unlockHiddenBlock(Player player, Identifier hiddenBlock) {
         // If there's a cached set of hidden unlocks already sent to the player, we might be
         // able to avoid this.
-        List<ResourceLocation> oldUnlocked = playerUnlockedCache.get(player.getUUID());
+        List<Identifier> oldUnlocked = playerUnlockedCache.get(player.getUUID());
         if (oldUnlocked != null) {
             // If we have a match, we don't need to do anything.
             if (oldUnlocked.contains(hiddenBlock))
@@ -134,11 +134,11 @@ public class DatabankUtils {
 
         ModMessages.sendToPlayer(new UnlockHiddenSyncS2CPacket(hiddenBlock), (ServerPlayer)player);
     }
-    public static void sendUnlockAdvancement(Player player, ResourceLocation advancement) {
+    public static void sendUnlockAdvancement(Player player, Identifier advancement) {
         scheduledUpdateAdvancement.computeIfAbsent(player.getUUID(), k -> new HashMap<>()).put(advancement, true);
         //ModMessages.sendToPlayer(new UnlockAdvancementS2CPacket(advancement), (ServerPlayer)player);
     }
-    public static void sendLockAdvancement(Player player, ResourceLocation advancement) {
+    public static void sendLockAdvancement(Player player, Identifier advancement) {
         scheduledUpdateAdvancement.computeIfAbsent(player.getUUID(), k -> new HashMap<>()).put(advancement, false);
         //ModMessages.sendToPlayer(new LockAdvancementS2CPacket(advancement), (ServerPlayer)player);
     }
@@ -148,15 +148,15 @@ public class DatabankUtils {
     public static float celciusToKelvin(float celcius) {
         return celcius-273.15f;
     }
-    public static boolean hasAdvancement(Player player, ResourceLocation advancement) {
+    public static boolean hasAdvancement(Player player, Identifier advancement) {
         AdvancementProgress progress = getAdvancementProgress(player, advancement);
         if (progress == null) {
             return false;
         }
         return progress.isDone();
     }
-    public static AdvancementProgress getAdvancementProgress(Player player, ResourceLocation advancement) {
-        if (player.level().isClientSide) {
+    public static AdvancementProgress getAdvancementProgress(Player player, Identifier advancement) {
+        if (player.level().isClientSide()) {
             if (ClientHandler.isClientPlayer(player)) {
                 return getAdvancementProgressClient(advancement);
             }
@@ -172,10 +172,10 @@ public class DatabankUtils {
         }
         return null;
     }
-    public static boolean hasAdvancementClient(ResourceLocation advancement) {
+    public static boolean hasAdvancementClient(Identifier advancement) {
         return ClientHandler.hasAdvancementClient(advancement);
     }
-    public static AdvancementProgress getAdvancementProgressClient(ResourceLocation advancement) {
+    public static AdvancementProgress getAdvancementProgressClient(Identifier advancement) {
         return ClientHandler.getProgress(advancement);
     }
     public static void recheckAdvancements(ServerPlayer player) {
@@ -207,14 +207,14 @@ public class DatabankUtils {
         public static boolean isClientPlayer(Player player) {
             return Minecraft.getInstance().player == player;
         }
-        public static boolean hasAdvancementClient(ResourceLocation advancement) {
+        public static boolean hasAdvancementClient(Identifier advancement) {
             AdvancementProgress progress = getProgress(advancement);
             if (progress == null) {
                 return false;
             }
             return progress.isDone();
         }
-        public static AdvancementProgress getProgress(ResourceLocation advancement) {
+        public static AdvancementProgress getProgress(Identifier advancement) {
             ClientPacketListener connection = Minecraft.getInstance().getConnection();
             if (connection != null) {
                 ClientAdvancements advancements = connection.getAdvancements();

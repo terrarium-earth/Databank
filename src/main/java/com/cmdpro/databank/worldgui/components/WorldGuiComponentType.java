@@ -1,11 +1,10 @@
 package com.cmdpro.databank.worldgui.components;
 
-import com.cmdpro.databank.worldgui.WorldGui;
-import com.cmdpro.databank.worldgui.WorldGuiEntity;
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 
 public abstract class WorldGuiComponentType {
-    public abstract WorldGuiComponent createComponent(WorldGui gui);
-    public abstract void saveData(WorldGuiComponent component, CompoundTag tag);
-    public abstract WorldGuiComponent loadData(WorldGui gui, CompoundTag tag);
+    public abstract MapCodec<? extends WorldGuiComponent> codec();
+    public abstract StreamCodec<RegistryFriendlyByteBuf, WorldGuiComponent> streamCodec();
 }

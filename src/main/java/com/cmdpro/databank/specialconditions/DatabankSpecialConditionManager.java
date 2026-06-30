@@ -1,24 +1,24 @@
 package com.cmdpro.databank.specialconditions;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.HashMap;
 
 public class DatabankSpecialConditionManager {
-    protected static HashMap<ResourceLocation, DatabankSpecialCondition> events = new HashMap<>();
+    protected static HashMap<Identifier, DatabankSpecialCondition> events = new HashMap<>();
     public static void init() {
         for (DatabankSpecialCondition i : events.values()) {
             i.isActive = i.checkActive();
         }
     }
-    public static void addEvent(ResourceLocation id, DatabankSpecialCondition event) {
+    public static void addEvent(Identifier id, DatabankSpecialCondition event) {
         events.put(id, event);
         event.id = id;
     }
-    public static void removeEvent(ResourceLocation id) {
+    public static void removeEvent(Identifier id) {
         events.remove(id);
     }
-    public static DatabankSpecialCondition getEvent(ResourceLocation id) {
+    public static DatabankSpecialCondition getEvent(Identifier id) {
         return events.get(id);
     }
 }

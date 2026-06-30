@@ -1,22 +1,22 @@
 package com.cmdpro.databank.megastructures;
 
-import com.cmdpro.databank.multiblock.Multiblock;
-import com.cmdpro.databank.registry.BlockEntityRegistry;
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.neoforged.neoforge.common.conditions.ConditionalOps;
 import net.neoforged.neoforge.common.conditions.WithConditions;
+import org.slf4j.Logger;
 
 import java.util.*;
 
@@ -27,6 +27,7 @@ public class Megastructure {
             Codec.INT.listOf().listOf().listOf().fieldOf("shape").forGetter((megastructure) -> megastructure.shape)
         ).apply(instance, Megastructure::new)
     );
+    private static final Logger LOGGER = LogUtils.getLogger();
     public static final Codec<Optional<WithConditions<Megastructure>>> CONDITION_CODEC = ConditionalOps.createConditionalCodecWithConditions(CODEC.codec());
     public List<MegastructureBlock> key;
     public Vec3i center;
@@ -92,7 +93,15 @@ public class Megastructure {
                         level.setBlockAndUpdate(blockPos, block.state);
                         if (block.nbt.isPresent()) {
                             if (level.getBlockEntity(blockPos) instanceof BlockEntity ent) {
-                                ent.loadCustomOnly(block.nbt.get(), level.registryAccess());
+                                try (var collector = new ProblemReporter.ScopedCollector(LOGGER)) {
+                                    ValueInput input = TagValueInput.create(
+                                        collector,
+                                        level.registryAccess(),
+                                        block.nbt.get()
+                                    );
+
+                                    ent.loadCustomOnly(input);
+                                }
                             }
                         }
                     }

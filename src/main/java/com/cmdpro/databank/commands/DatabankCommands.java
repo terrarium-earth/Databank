@@ -2,7 +2,6 @@ package com.cmdpro.databank.commands;
 
 import com.cmdpro.databank.Databank;
 import com.cmdpro.databank.DatabankUtils;
-import com.cmdpro.databank.dialogue.DialogueInstance;
 import com.cmdpro.databank.dialogue.DialogueTree;
 import com.cmdpro.databank.dialogue.DialogueTreeManager;
 import com.cmdpro.databank.megastructures.Megastructure;
@@ -16,31 +15,29 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
-import net.minecraft.commands.arguments.coordinates.WorldCoordinate;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.commands.SetBlockCommand;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.permissions.Permissions;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 import java.util.List;
 
-@EventBusSubscriber(modid = Databank.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = Databank.MOD_ID)
 public class DatabankCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher){
         dispatcher.register(Commands.literal(Databank.MOD_ID)
-                .requires(source -> source.hasPermission(4))
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
                 .then(Commands.literal("spawn_megastructure")
-                        .then(Commands.argument("megastructure", ResourceLocationArgument.id())
+                        .then(Commands.argument("megastructure", IdentifierArgument.id())
                                 .suggests((stack, builder) -> {
-                                    return SharedSuggestionProvider.suggest(MegastructureManager.megastructures.keySet().stream().map(ResourceLocation::toString), builder);
+                                    return SharedSuggestionProvider.suggest(MegastructureManager.megastructures.keySet().stream().map(Identifier::toString), builder);
                                 })
                                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                         .executes((command) -> {
@@ -58,9 +55,9 @@ public class DatabankCommands {
                 )
                 .then(Commands.literal("open_dialogue")
                         .then(Commands.argument("target", EntityArgument.players())
-                            .then(Commands.argument("tree", ResourceLocationArgument.id())
+                            .then(Commands.argument("tree", IdentifierArgument.id())
                                     .suggests((stack, builder) -> {
-                                        return SharedSuggestionProvider.suggest(DialogueTreeManager.trees.keySet().stream().map(ResourceLocation::toString), builder);
+                                        return SharedSuggestionProvider.suggest(DialogueTreeManager.trees.keySet().stream().map(Identifier::toString), builder);
                                     })
                                     .then(Commands.argument("entry", StringArgumentType.string())
                                         .executes((command) -> {
@@ -75,7 +72,7 @@ public class DatabankCommands {
     private static int openDialogue(CommandContext<CommandSourceStack> command) throws CommandSyntaxException {
         List<ServerPlayer> players = command.getArgument("target", EntitySelector.class).findPlayers(command.getSource());
         for (ServerPlayer i : players) {
-            ResourceLocation treeId = command.getArgument("tree", ResourceLocation.class);
+            Identifier treeId = command.getArgument("tree", Identifier.class);
             String entry = command.getArgument("entry", String.class);
             if (DialogueTreeManager.trees.containsKey(treeId)) {
                 DialogueTree tree = DialogueTreeManager.trees.get(treeId);
@@ -107,7 +104,7 @@ public class DatabankCommands {
     }
     private static int spawnMegastructure(CommandContext<CommandSourceStack> command) throws CommandSyntaxException {
         BlockPos pos = BlockPosArgument.getLoadedBlockPos(command, "pos");
-        ResourceLocation id = command.getArgument("megastructure", ResourceLocation.class);
+        Identifier id = command.getArgument("megastructure", Identifier.class);
         Megastructure megastructure = MegastructureManager.megastructures.get(id);
         megastructure.placeIntoWorld(command.getSource().getLevel(), pos);
         command.getSource().sendSuccess(() -> {

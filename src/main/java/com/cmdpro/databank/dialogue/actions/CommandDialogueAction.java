@@ -6,19 +6,38 @@ import com.cmdpro.databank.dialogue.DialogueInstance;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 
 public class CommandDialogueAction extends DialogueChoiceAction {
     public String command;
     @Override
     public void onClick(Player player, DialogueInstance instance, DialogueChoice choice) {
-        CommandSourceStack source = player.createCommandSourceStack().withPermission(4).withSuppressedOutput();
-        if (player.getServer() != null)
-            player.getServer().getCommands().performPrefixedCommand(source, command);
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        CommandSourceStack source = new CommandSourceStack(
+            CommandSource.NULL,
+            player.position(),
+            player.getRotationVector(),
+            level,
+            LevelBasedPermissionSet.OWNER,
+            player.getPlainTextName(),
+            player.getDisplayName(),
+            level.getServer(),
+            player
+        ).withSuppressedOutput();
+
+        level.getServer().getCommands().performPrefixedCommand(source, command);
     }
     public CommandDialogueAction(String command) {
         this.command = command;

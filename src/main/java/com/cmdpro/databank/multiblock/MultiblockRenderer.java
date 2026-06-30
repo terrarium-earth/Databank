@@ -2,74 +2,93 @@ package com.cmdpro.databank.multiblock;
 
 import com.cmdpro.databank.ClientDatabankUtils;
 import com.cmdpro.databank.Databank;
-import com.cmdpro.databank.mixin.client.BufferSourceMixin;
-import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.blockentity.BeaconRenderer;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.block.MovingBlockRenderState;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraft.world.level.ColorResolver;
-import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.lighting.LevelLightEngine;
-import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ExtractLevelRenderStateEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
 import java.util.*;
+
 @EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID)
 public class MultiblockRenderer {
+    public static Rotation multiblockRotation;
+    public static BlockPos multiblockPos;
+    public static Multiblock multiblock;
+    public static MultiBufferSource.BufferSource buffers;
+    public static SubmitNodeStorage submitNodeStorage;
+    public static FeatureRenderDispatcher featureRenderDispatcher;
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage().equals(RenderLevelStageEvent.Stage.AFTER_PARTICLES)) {
+    public static void submitGeometry(SubmitCustomGeometryEvent event) {
+        MultiblockRenderState renderState = event.getLevelRenderState().getRenderData(MultiblockRenderState.KEY);
+
+        if (renderState != null) {
+            CameraRenderState camera = event.getLevelRenderState().cameraRenderState;
             event.getPoseStack().pushPose();
-            event.getPoseStack().translate(-event.getCamera().getPosition().x, -event.getCamera().getPosition().y, -event.getCamera().getPosition().z);
-            MultiblockRenderer.renderCurrentMultiblock(event.getPoseStack(), event.getPartialTick());
+
+            event.getPoseStack().translate(
+                -camera.pos.x(),
+                -camera.pos.y(),
+                -camera.pos.z()
+            );
+
+            MultiblockRenderer.submitMultiblocks(event.getPoseStack(), renderState, camera);
+
             event.getPoseStack().popPose();
         }
     }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onRenderLevelStage(RenderLevelStageEvent.AfterTranslucentParticles event) {
+        if (featureRenderDispatcher != null) {
+            featureRenderDispatcher.renderAllFeatures();
+            buffers.endBatch();
+        }
+    }
+
     @SubscribeEvent
-    public static void onClientTickPost(ClientTickEvent.Post event)
-    {
+    public static void onClientTickPost(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (MultiblockRenderer.multiblock != null) {
             if (MultiblockRenderer.multiblockPos != null) {
-                if (MultiblockRenderer.multiblock.checkMultiblock(mc.level, MultiblockRenderer.multiblockPos, MultiblockRenderer.multiblockRotation)) {
+                if (MultiblockRenderer.multiblock.checkMultiblock(
+                    mc.level,
+                    MultiblockRenderer.multiblockPos,
+                    MultiblockRenderer.multiblockRotation
+                )) {
                     MultiblockRenderer.multiblock = null;
                     MultiblockRenderer.multiblockPos = null;
                 }
@@ -88,26 +107,35 @@ public class MultiblockRenderer {
             }
         }
     }
-    public static Rotation multiblockRotation;
-    public static BlockPos multiblockPos;
-    public static Multiblock multiblock;
 
-    public static MultiBufferSource.BufferSource buffers;
-    public static void renderBlock(Multiblock multiblock, BlockState block, BlockPos pos, BlockPos worldPos, PoseStack stack, DeltaTracker partialTick) {
-        if (buffers == null) {
-            buffers = initBuffers(Minecraft.getInstance().renderBuffers().bufferSource());
+    public static void submitMultiblocks(PoseStack stack, MultiblockRenderState state, CameraRenderState camera) {
+        if (MultiblockRenderer.submitNodeStorage == null) {
+            Minecraft minecraft = Minecraft.getInstance();
+            RenderBuffers renderBuffers = minecraft.renderBuffers();
+
+            submitNodeStorage = new SubmitNodeStorage();
+            buffers = initBuffers(renderBuffers.bufferSource());
+
+            featureRenderDispatcher = new FeatureRenderDispatcher(
+                submitNodeStorage,
+                minecraft.getModelManager(),
+                buffers,
+                minecraft.getAtlasManager(),
+                renderBuffers.outlineBufferSource(),
+                renderBuffers.crumblingBufferSource(),
+                minecraft.font,
+                minecraft.gameRenderer.getGameRenderState()
+            );
         }
-        renderBlock(multiblock, block, pos, worldPos, stack, partialTick, buffers);
-    }
-    public static void renderCurrentMultiblock(PoseStack stack, DeltaTracker partialTick) {
-        if (multiblock != null) {
-            if (multiblockPos == null) {
-                if (Minecraft.getInstance().hitResult instanceof BlockHitResult result) {
-                    renderMultiblock(multiblock, result.getBlockPos().relative(result.getDirection()), stack, partialTick, getRotation());
-                }
-            } else {
-                renderMultiblock(multiblock, multiblockPos, stack, partialTick, multiblockRotation);
-            }
+
+        var blockEntityRenderDispatcher = Minecraft.getInstance().getBlockEntityRenderDispatcher();
+
+        for (MovingBlockRenderState movingBlockRenderState : state.movingBlockRenderStates) {
+            submitNodeStorage.submitMovingBlock(stack, movingBlockRenderState);
+        }
+
+        for (BlockEntityRenderState blockEntityRenderState : state.blockEntityRenderStates) {
+            blockEntityRenderDispatcher.submit(blockEntityRenderState, new PoseStack(), submitNodeStorage, camera);
         }
     }
 
@@ -125,72 +153,112 @@ public class MultiblockRenderer {
         }
         return rot;
     }
-    public static void renderMultiblock(Multiblock multiblock, BlockPos pos, PoseStack stack, DeltaTracker partialTick) {
-        renderMultiblock(multiblock, pos, stack, partialTick, Rotation.NONE);
-    }
-    public static void renderMultiblock(Multiblock multiblock, BlockPos pos, PoseStack stack, DeltaTracker partialTick, Rotation rotation) {
-        if (buffers == null) {
-            buffers = initBuffers(Minecraft.getInstance().renderBuffers().bufferSource());
-        }
-        renderMultiblock(multiblock, pos, stack, partialTick, rotation, buffers);
-    }
-    public static void renderMultiblock(Multiblock multiblock, BlockPos pos, PoseStack stack, DeltaTracker partialTick, Rotation rotation, MultiBufferSource.BufferSource bufferSource) {
+
+    private static void extractMultiblockState(Multiblock multiblock, MultiblockRenderState renderState, ClientLevel level, BlockPos pos, float partialTicks, Rotation rotation) {
         for (List<List<Multiblock.PredicateAndPos>> i : multiblock.getStates()) {
             for (List<Multiblock.PredicateAndPos> j : i) {
                 for (Multiblock.PredicateAndPos k : j) {
                     if (pos != null) {
-                        BlockState state = Minecraft.getInstance().level.getBlockState(k.offset.rotate(rotation).offset(pos));
+                        BlockState state = Minecraft.getInstance().level.getBlockState(k.offset.rotate(rotation).offset(
+                            pos));
                         boolean stateMatches = k.predicate.isSame(state, rotation);
                         if (!stateMatches) {
-                            renderBlock(multiblock, k.predicate.getVisual().rotate(Minecraft.getInstance().level, k.offset, rotation), k.offset, k.offset.rotate(rotation).offset(pos), stack, partialTick, bufferSource);
+                            extractBlockState(
+                                multiblock,
+                                renderState,
+                                level,
+                                partialTicks,
+                                k.predicate.getVisual().rotate(Minecraft.getInstance().level, k.offset, rotation),
+                                k.offset,
+                                k.offset.rotate(rotation).offset(pos)
+                            );
                         }
                     } else {
-                        renderBlock(multiblock, k.predicate.getVisual().rotate(Minecraft.getInstance().level, k.offset, rotation), k.offset, k.offset.rotate(rotation), stack, partialTick, bufferSource);
+                        extractBlockState(
+                            multiblock,
+                            renderState,
+                            level,
+                            partialTicks,
+                            k.predicate.getVisual().rotate(Minecraft.getInstance().level, k.offset, rotation),
+                            k.offset,
+                            k.offset.rotate(rotation)
+                        );
                     }
                 }
             }
         }
-        bufferSource.endBatch();
     }
-    public static void renderBlock(Multiblock multiblock, BlockState block, BlockPos pos, BlockPos worldPos, PoseStack stack, DeltaTracker partialTick, MultiBufferSource.BufferSource bufferSource) {
-        stack.pushPose();
-        stack.translate(worldPos.getX(), worldPos.getY(), worldPos.getZ());
-        BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
-        FluidState fluidState = block.getFluidState();
-        if (!fluidState.isEmpty()) {
-            RenderType layer = ItemBlockRenderTypes.getRenderLayer(fluidState);
-            VertexConsumer buffer = bufferSource.getBuffer(layer);
-            blockRenderer.renderLiquid(pos, multiblock, buffer, block, fluidState);
-        }
-        if (block.getRenderShape() != RenderShape.INVISIBLE) {
-            BakedModel model = blockRenderer.getBlockModel(block);
-            for (RenderType i : model.getRenderTypes(block, Minecraft.getInstance().level.random, ModelData.EMPTY)) {
-                VertexConsumer hologramConsumer = bufferSource.getBuffer(i);
-                blockRenderer.renderBatched(block, pos, multiblock, stack, hologramConsumer, false, Minecraft.getInstance().level.random, ModelData.EMPTY, i);
+
+    @SubscribeEvent
+    public static void onExtractLevelRenderState(ExtractLevelRenderStateEvent event) {
+        var state = new MultiblockRenderState();
+        var level = event.getLevel();
+        var partialTick = event.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+
+        if (multiblock != null) {
+            if (multiblockPos == null) {
+                if (Minecraft.getInstance().hitResult instanceof BlockHitResult result) {
+                    extractMultiblockState(
+                        multiblock,
+                        state,
+                        level,
+                        result.getBlockPos().relative(result.getDirection()),
+                        partialTick,
+                        getRotation()
+                    );
+                }
+            } else {
+                extractMultiblockState(multiblock, state, level, multiblockPos, partialTick, multiblockRotation);
             }
         }
+
+        event.getRenderState().setRenderData(MultiblockRenderState.KEY, state);
+    }
+
+    private static void extractBlockState(Multiblock multiblock, MultiblockRenderState state, ClientLevel level, float partialTicks, BlockState block, BlockPos pos, BlockPos worldPos) {
+        var blockEntityRenderDispatcher = Minecraft.getInstance().getBlockEntityRenderDispatcher();
+
+        // TODO Render fluids
+        //  Fluids are rendered with the chunk and not with moving blocks, so we'd need to change some of this handling
+
+        if (block.getRenderShape() == RenderShape.MODEL) {
+            MovingBlockRenderState movingBlockRenderState = new MovingBlockRenderState();
+            movingBlockRenderState.randomSeedPos = pos;
+            movingBlockRenderState.blockPos = pos;
+            movingBlockRenderState.blockState = block;
+            movingBlockRenderState.biome = level.getBiome(pos);
+            movingBlockRenderState.cardinalLighting = level.cardinalLighting();
+            movingBlockRenderState.lightEngine = level.getLightEngine();
+
+            state.movingBlockRenderStates.add(movingBlockRenderState);
+        }
+
         if (block.getBlock() instanceof EntityBlock entityBlock) {
-            var be = multiblock.blockEntityCache.computeIfAbsent(pos.immutable(), p -> entityBlock.newBlockEntity(p, block));
-            if (be != null && !multiblock.erroredBlockEntities.contains(be)) {
+            var be = multiblock.blockEntityCache.computeIfAbsent(
+                pos.immutable(),
+                p -> entityBlock.newBlockEntity(p, block)
+            );
+
+            if (be != null) {
                 be.setLevel(Minecraft.getInstance().level);
 
                 // fake cached state in case the renderer checks it as we don't want to query the actual world
                 be.setBlockState(block);
 
+                var blockEntityRenderState = blockEntityRenderDispatcher.tryExtractRenderState(
+                    be,
+                    partialTicks,
+                    null,
+                    null
+                );
 
-                try {
-                    BlockEntityRenderer<BlockEntity> renderer = Minecraft.getInstance().getBlockEntityRenderDispatcher().getRenderer(be);
-                    if (renderer != null) {
-                        renderer.render(be, partialTick.getGameTimeDeltaTicks(), stack, bufferSource, 0xF000F0, OverlayTexture.NO_OVERLAY);
-                    }
-                } catch (Exception e) {
-                    multiblock.erroredBlockEntities.add(be);
-                    Databank.LOGGER.error("[DATABANK ERROR] Error rendering block entity", e);
+                if (blockEntityRenderState != null) {
+                    state.blockEntityRenderStates.add(blockEntityRenderState);
                 }
             }
         }
-        stack.popPose();
     }
+
     private static MultiBufferSource.BufferSource initBuffers(MultiBufferSource.BufferSource original) {
         return ClientDatabankUtils.createMainBufferSourceCopy((fixedBuffers, sharedBuffer) -> {
             SequencedMap<RenderType, ByteBufferBuilder> remapped = new Object2ObjectLinkedOpenHashMap<>();
@@ -200,6 +268,14 @@ public class MultiblockRenderer {
             return new HologramBuffers(sharedBuffer, remapped);
         });
     }
+
+    public static class MultiblockRenderState {
+        public static final ContextKey<MultiblockRenderState> KEY = new ContextKey<>(Databank.locate("multiblocks"));
+
+        public List<MovingBlockRenderState> movingBlockRenderStates;
+        public List<BlockEntityRenderState> blockEntityRenderStates;
+    }
+
     private static class HologramBuffers extends MultiBufferSource.BufferSource {
         protected HologramBuffers(ByteBufferBuilder fallback, SequencedMap<RenderType, ByteBufferBuilder> layerBuffers) {
             super(fallback, layerBuffers);
@@ -211,23 +287,15 @@ public class MultiblockRenderer {
         }
     }
 
-    private static class HologramRenderType extends RenderType {
+    public static class HologramRenderType extends RenderType {
+        private static final Map<RenderPipeline, RenderPipeline> remappedPipelines = new IdentityHashMap<>();
         private static final Map<RenderType, RenderType> remappedTypes = new IdentityHashMap<>();
 
         private HologramRenderType(RenderType original) {
-            super(String.format("%s_%s_hologram", original.toString(), Databank.MOD_ID), original.format(), original.mode(), original.bufferSize(), original.affectsCrumbling(), true, () -> {
-                original.setupRenderState();
-
-                RenderSystem.disableDepthTest();
-                RenderSystem.enableBlend();
-                RenderSystem.setShaderColor(1f, 1f, 1f, 0.5f);
-            }, () -> {
-                RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-                RenderSystem.disableBlend();
-                RenderSystem.enableDepthTest();
-
-                original.clearRenderState();
-            });
+            super(
+                String.format("%s_%s_hologram", original.toString(), Databank.MOD_ID),
+                remapSetup(original)
+            );
         }
 
         public static RenderType remap(RenderType in) {
@@ -236,6 +304,59 @@ public class MultiblockRenderer {
             } else {
                 return remappedTypes.computeIfAbsent(in, HologramRenderType::new);
             }
+        }
+
+        private static RenderSetup remapSetup(RenderType original) {
+            RenderSetup.RenderSetupBuilder builder = RenderSetup.builder(tryRemap(original.pipeline()));
+
+            var state = original.state;
+
+            if (state.useLightmap) {
+                builder.useLightmap();
+            }
+
+            if (state.useOverlay) {
+                builder.useOverlay();
+            }
+
+            for (Map.Entry<String, RenderSetup.TextureBinding> entry : state.textures.entrySet()) {
+                builder.withTexture(entry.getKey(), entry.getValue().location(), entry.getValue().sampler());
+            }
+
+            if (original.affectsCrumbling()) {
+                builder.affectsCrumbling();
+            }
+
+            return builder
+                .setTextureTransform(state.textureTransform)
+                .setOutputTarget(original.outputTarget())
+                .setOutline(RenderSetup.OutlineProperty.NONE)
+                .sortOnUpload()
+                .bufferSize(original.bufferSize())
+                .setLayeringTransform(state.layeringTransform)
+                .createRenderSetup();
+        }
+
+        private static RenderPipeline remap(RenderPipeline in) {
+            return remappedPipelines.computeIfAbsent(
+                in,
+                (pipeline) -> RenderPipeline.builder(pipeline.toBuilder().buildSnippet())
+                    .withDepthStencilState(Optional.empty())
+                    .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+                    .build()
+            );
+        }
+
+        private static RenderPipeline tryRemap(RenderPipeline in) {
+            if (in.getDepthStencilState() != null) {
+                return remap(in);
+            }
+
+            if (in.getColorTargetState().blendFunction().isEmpty()) {
+                return remap(in);
+            }
+
+            return in;
         }
     }
 }

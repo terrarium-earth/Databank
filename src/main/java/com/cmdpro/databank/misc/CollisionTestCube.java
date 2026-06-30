@@ -47,8 +47,8 @@ public class CollisionTestCube {
         return getEntitiesOfClass(entityClass, level, alignEntityHitboxes, EntitySelector.NO_SPECTATORS);
     }
     public <T extends Entity> List<T> getEntitiesOfClass(Class<T> entityClass, Level level, boolean alignEntityHitboxes, Predicate<? super T> filter) {
-        float testAABBSize = Math.max(Math.max(size.x, size.y), size.z)*2f;
-        return level.getEntitiesOfClass(entityClass, AABB.ofSize(new Vec3(center.x, center.y, center.z), testAABBSize, testAABBSize, testAABBSize), (entity) -> {
+        float testAABBSize = Math.max(Math.max(size.x(), size.y()), size.z())*2f;
+        return level.getEntitiesOfClass(entityClass, AABB.ofSize(new Vec3(center.x(), center.y(), center.z()), testAABBSize, testAABBSize, testAABBSize), (entity) -> {
             if (filter.test(entity)) {
                 CollisionTestCube cube = new CollisionTestCube(entity.getBoundingBox(), alignEntityHitboxes ? new Quaternionf(rotation) : new Quaternionf());
                 return cube.intersects(this);
@@ -120,9 +120,9 @@ public class CollisionTestCube {
         Vector3f axisY = new Vector3f(0, 1, 0).rotate(rotation);
         Vector3f axisZ = new Vector3f(0, 0, 1).rotate(rotation);
 
-        float pX = Math.abs(halfSize.x * axisX.dot(axis));
-        float pY = Math.abs(halfSize.y * axisY.dot(axis));
-        float pZ = Math.abs(halfSize.z * axisZ.dot(axis));
+        float pX = Math.abs(halfSize.x() * axisX.dot(axis));
+        float pY = Math.abs(halfSize.y() * axisY.dot(axis));
+        float pZ = Math.abs(halfSize.z() * axisZ.dot(axis));
 
         float r = pX + pY + pZ;
 

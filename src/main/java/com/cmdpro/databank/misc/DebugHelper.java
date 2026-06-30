@@ -4,7 +4,7 @@ package com.cmdpro.databank.misc;
 import com.cmdpro.databank.Databank;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DebugHelper {
-    @EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID)
     protected static class ModEvents {
         @SubscribeEvent
         public static void registerGuiLayers(RegisterGuiLayersEvent event) {
@@ -24,13 +24,13 @@ public class DebugHelper {
                 int y = 4;
                 Font font = Minecraft.getInstance().font;
                 for (String i : renderedText) {
-                    guiGraphics.drawString(font, i, 4, y, 0xFFFFFFFF);
+                    guiGraphics.text(font, i, 4, y, 0xFFFFFFFF);
                     y += font.lineHeight + 2;
                 }
             });
         }
     }
-    @EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+    @EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID)
     protected static class GameEvents {
         @SubscribeEvent(priority = EventPriority.LOWEST)
         public static void onClientTick(ClientTickEvent.Post event) {

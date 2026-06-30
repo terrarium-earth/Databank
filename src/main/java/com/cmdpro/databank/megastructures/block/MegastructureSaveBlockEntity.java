@@ -5,52 +5,58 @@ import com.cmdpro.databank.megastructures.Megastructure;
 import com.cmdpro.databank.registry.AttachmentTypeRegistry;
 import com.cmdpro.databank.registry.BlockEntityRegistry;
 import com.cmdpro.databank.registry.BlockRegistry;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.mojang.serialization.DataResult;
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.JsonOps;
-import com.mojang.serialization.RecordBuilder;
-import net.minecraft.FileUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.FileUtil;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.entity.StructureBlockEntity;
+import net.minecraft.world.level.block.entity.BoundingBoxRenderable;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.level.levelgen.structure.templatesystem.loader.TemplatePathFactory;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import org.slf4j.Logger;
 
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 
 @EventBusSubscriber(modid = Databank.MOD_ID)
-public class MegastructureSaveBlockEntity extends BlockEntity {
+public class MegastructureSaveBlockEntity extends BlockEntity implements BoundingBoxRenderable {
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final FileToIdConverter LISTER = new FileToIdConverter("megastructures", "json");
+
+    int changeProgressTo;
+    private int bindProcess;
+    public BlockPos corner1;
+    public BlockPos corner2;
+    public BlockPos center;
+    private UUID uuid;
+
     public MegastructureSaveBlockEntity(BlockPos pos, BlockState blockState) {
         super(BlockEntityRegistry.MEGASTRUCTURE_SAVE.get(), pos, blockState);
     }
+
     public void setBindProcess(int process) {
         changeProgressTo = process;
     }
@@ -60,12 +66,7 @@ public class MegastructureSaveBlockEntity extends BlockEntity {
     public int getBindProcess() {
         return bindProcess;
     }
-    int changeProgressTo;
-    private int bindProcess;
-    public BlockPos corner1;
-    public BlockPos corner2;
-    public BlockPos center;
-    private UUID uuid;
+
     public UUID getUuid() {
         if (uuid == null) {
             uuid = UUID.randomUUID();
@@ -82,45 +83,38 @@ public class MegastructureSaveBlockEntity extends BlockEntity {
         this.level.sendBlockUpdated(this.getBlockPos(), blockState, blockState, 3);
         this.setChanged();
     }
+
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket(){
         return ClientboundBlockEntityDataPacket.create(this);
     }
+
     @Override
-    public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider pRegistries){
-        CompoundTag tag = pkt.getTag();
-        if (tag.contains("corner1X") && tag.contains("corner1Y") && tag.contains("corner1Z")) {
-            corner1 = new BlockPos(tag.getInt("corner1X"), tag.getInt("corner1Y"), tag.getInt("corner1Z"));
-        }
-        if (tag.contains("corner2X") && tag.contains("corner2Y") && tag.contains("corner2Z")) {
-            corner2 = new BlockPos(tag.getInt("corner2X"), tag.getInt("corner2Y"), tag.getInt("corner2Z"));
-        }
-        if (tag.contains("centerX") && tag.contains("centerY") && tag.contains("centerZ")) {
-            center = new BlockPos(tag.getInt("centerX"), tag.getInt("centerY"), tag.getInt("centerZ"));
-        }
+    public void onDataPacket(Connection net, ValueInput valueInput) {
+        Optional<BlockPos> corner1 = valueInput.read("corner1", BlockPos.CODEC);
+        Optional<BlockPos> corner2 = valueInput.read("corner2", BlockPos.CODEC);
+        Optional<BlockPos> center = valueInput.read("center", BlockPos.CODEC);
+
+        corner1.ifPresent(blockPos -> this.corner1 = blockPos);
+        corner2.ifPresent(blockPos -> this.corner2 = blockPos);
+        center.ifPresent(blockPos -> this.center = blockPos);
     }
+
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider pRegistries) {
-        CompoundTag tag = new CompoundTag();
-        if (corner1 != null) {
-            tag.putInt("corner1X", corner1.getX());
-            tag.putInt("corner1Y", corner1.getY());
-            tag.putInt("corner1Z", corner1.getZ());
-        }
-        if (corner2 != null) {
-            tag.putInt("corner2X", corner2.getX());
-            tag.putInt("corner2Y", corner2.getY());
-            tag.putInt("corner2Z", corner2.getZ());
-        }
-        if (center != null) {
-            tag.putInt("centerX", center.getX());
-            tag.putInt("centerY", center.getY());
-            tag.putInt("centerZ", center.getZ());
-        }
-        return tag;
+        ProblemReporter.Collector problems = new ProblemReporter.Collector();
+        var output = TagValueOutput.createWithContext(problems, pRegistries);
+
+        output.storeNullable("corner1", BlockPos.CODEC, corner1);
+        output.storeNullable("corner2", BlockPos.CODEC, corner2);
+        output.storeNullable("center", BlockPos.CODEC, center);
+
+        problems.forEach((path, problem) -> LOGGER.warn("Problem serializing megastructure save block entity {} to network in {}, {}", getBlockPos(), path, problem));
+
+        return output.buildResult();
     }
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (player.isShiftKeyDown()) {
                 if (getBindProcess() == 0) {
                     player.sendSystemMessage(Component.translatable("block.databank.megastructure_save.corner1"));
@@ -142,15 +136,16 @@ public class MegastructureSaveBlockEntity extends BlockEntity {
                 }
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.SUCCESS;
     }
     public void save() {
         Megastructure megastructure = Megastructure.createFromWorld(level, corner1, corner2, center);
         try {
-            Path path = ((ServerLevel) level).getServer().getWorldPath(LevelResource.GENERATED_DIR).normalize();
-            path = path.resolve(Databank.MOD_ID).resolve("megastructures");
-            path = FileUtil.createPathToResource(path, getUuid().toString(), ".json");
+            Path root = ((ServerLevel) level).getServer().getWorldPath(LevelResource.GENERATED_DIR).normalize();
+            var pathFactory = new TemplatePathFactory(root);
+            Path path = pathFactory.createAndValidatePathToStructure(Databank.locate(getUuid().toString()), LISTER);
             JsonElement json = Megastructure.CODEC.encode(megastructure, JsonOps.INSTANCE, JsonOps.INSTANCE.mapBuilder()).build(JsonOps.INSTANCE.empty()).result().orElse(null);
+
             if (json != null) {
                 Path parentPath = path.getParent();
                 Files.createDirectories(Files.exists(parentPath) ? parentPath.toRealPath() : parentPath);
@@ -193,40 +188,36 @@ public class MegastructureSaveBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        tag.putUUID("uuid", getUuid());
-        if (corner1 != null) {
-            tag.putInt("corner1X", corner1.getX());
-            tag.putInt("corner1Y", corner1.getY());
-            tag.putInt("corner1Z", corner1.getZ());
-        }
-        if (corner2 != null) {
-            tag.putInt("corner2X", corner2.getX());
-            tag.putInt("corner2Y", corner2.getY());
-            tag.putInt("corner2Z", corner2.getZ());
-        }
-        if (center != null) {
-            tag.putInt("centerX", center.getX());
-            tag.putInt("centerY", center.getY());
-            tag.putInt("centerZ", center.getZ());
-        }
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.store("uuid", UUIDUtil.CODEC, getUuid());
+        output.storeNullable("corner1", BlockPos.CODEC, corner1);
+        output.storeNullable("corner2", BlockPos.CODEC, corner2);
+        output.storeNullable("center", BlockPos.CODEC, center);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        if (tag.contains("uuid")) {
-            uuid = tag.getUUID("uuid");
-        }
-        if (tag.contains("corner1X") && tag.contains("corner1Y") && tag.contains("corner1Z")) {
-            corner1 = new BlockPos(tag.getInt("corner1X"), tag.getInt("corner1Y"), tag.getInt("corner1Z"));
-        }
-        if (tag.contains("corner2X") && tag.contains("corner2Y") && tag.contains("corner2Z")) {
-            corner2 = new BlockPos(tag.getInt("corner2X"), tag.getInt("corner2Y"), tag.getInt("corner2Z"));
-        }
-        if (tag.contains("centerX") && tag.contains("centerY") && tag.contains("centerZ")) {
-            center = new BlockPos(tag.getInt("centerX"), tag.getInt("centerY"), tag.getInt("centerZ"));
-        }
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+
+        Optional<UUID> uuid = input.read("uuid", UUIDUtil.CODEC);
+        Optional<BlockPos> corner1 = input.read("corner1", BlockPos.CODEC);
+        Optional<BlockPos> corner2 = input.read("corner2", BlockPos.CODEC);
+        Optional<BlockPos> center = input.read("center", BlockPos.CODEC);
+
+        uuid.ifPresent((id) -> this.uuid = id);
+        corner1.ifPresent(blockPos -> this.corner1 = blockPos);
+        corner2.ifPresent(blockPos -> this.corner2 = blockPos);
+        center.ifPresent(blockPos -> this.center = blockPos);
+    }
+
+    @Override
+    public Mode renderMode() {
+        return corner1 != null && corner2 != null ? Mode.BOX_AND_INVISIBLE_BLOCKS : Mode.BOX;
+    }
+
+    @Override
+    public RenderableBox getRenderableBox() {
+        return new RenderableBox(corner1, corner2.subtract(corner1));
     }
 }

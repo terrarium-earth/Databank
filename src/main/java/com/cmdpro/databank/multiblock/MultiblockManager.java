@@ -2,20 +2,20 @@ package com.cmdpro.databank.multiblock;
 
 import com.cmdpro.databank.Databank;
 import com.google.gson.*;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.FileToIdConverter;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class MultiblockManager extends SimpleJsonResourceReloadListener {
-    protected static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
-
+public class MultiblockManager extends SimpleJsonResourceReloadListener<JsonElement> {
     public static MultiblockManager instance;
     protected MultiblockManager() {
-        super(GSON, "databank/multiblocks");
+        super(ExtraCodecs.JSON, FileToIdConverter.json("databank/multiblocks"));
     }
     public static MultiblockManager getOrCreateInstance() {
         if (instance == null) {
@@ -23,13 +23,13 @@ public class MultiblockManager extends SimpleJsonResourceReloadListener {
         }
         return instance;
     }
-    public static Map<ResourceLocation, Multiblock> multiblocks = new HashMap<>();
+    public static Map<Identifier, Multiblock> multiblocks = new HashMap<>();
     @Override
-    protected void apply(Map<ResourceLocation, JsonElement> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
+    protected void apply(Map<Identifier, JsonElement> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
         multiblocks = new HashMap<>();
         Databank.LOGGER.info("[DATABANK] Adding Databank Multiblocks");
-        for (Map.Entry<ResourceLocation, JsonElement> i : pObject.entrySet()) {
-            ResourceLocation location = i.getKey();
+        for (Map.Entry<Identifier, JsonElement> i : pObject.entrySet()) {
+            Identifier location = i.getKey();
             if (location.getPath().startsWith("_")) {
                 continue;
             }

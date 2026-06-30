@@ -14,7 +14,7 @@ import org.joml.Vector2i;
 import java.util.ArrayList;
 import java.util.List;
 
-@EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID)
 public class ResizeHelper {
     private static final List<ResizeListener> onResize = new ArrayList<>();
     private static Vector2i queuedResize;
@@ -44,8 +44,8 @@ public class ResizeHelper {
         if (!hasFinishedLoad) {
             hasFinishedLoad = true;
             if (queuedResize != null) {
-                int width = queuedResize.x;
-                int height = queuedResize.y;
+                int width = queuedResize.x();
+                int height = queuedResize.y();
                 for (ResizeListener i : onResize) {
                     i.resize(width, height);
                 }

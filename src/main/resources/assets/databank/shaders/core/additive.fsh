@@ -1,6 +1,7 @@
-#version 150
+#version 330
 
 #moj_import <fog.glsl>
+#moj_import <dynamictransforms.glsl>
 
 uniform sampler2D Sampler0;
 
@@ -9,9 +10,10 @@ uniform float FogStart;
 uniform float FogEnd;
 uniform vec4 FogColor;
 
-in float vertexDistance;
 in vec2 texCoord0;
 in vec4 vertexColor;
+in float sphericalVertexDistance;
+in float cylindricalVertexDistance;
 
 out vec4 fragColor;
 
@@ -20,5 +22,5 @@ void main() {
     if (color.a < 0.001) {
         discard;
     }
-    fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
+    fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
 }

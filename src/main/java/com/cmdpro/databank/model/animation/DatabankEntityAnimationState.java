@@ -18,14 +18,14 @@ public class DatabankEntityAnimationState extends DatabankAnimationState {
     @Override
     public double getTime() {
         float partialTicks = 0;
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             partialTicks = ClientHandler.getPartialTicks();
         }
         return (entity.tickCount+partialTicks)/20d;
     }
     private static class ClientHandler {
         public static float getPartialTicks() {
-            return Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+            return Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
         }
     }
 }

@@ -16,7 +16,7 @@ import com.cmdpro.databank.registry.CriteriaTriggerRegistry;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.entity.player.AdvancementEvent;
@@ -27,12 +27,12 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 @EventBusSubscriber(modid = Databank.MOD_ID)
 public class ModEventHandler {
     @SubscribeEvent
-    public static void addReloadListenerEvent(AddReloadListenerEvent event) {
-        event.addListener(HiddenManager.getOrCreateInstance());
-        event.addListener(MultiblockManager.getOrCreateInstance());
-        event.addListener(MegastructureManager.getOrCreateInstance());
-        event.addListener(DialogueTreeManager.getOrCreateInstance());
-        event.addListener(InstancedDimensionManager.getOrCreateInstance());
+    public static void addReloadListenerEvent(AddServerReloadListenersEvent event) {
+        event.addListener(Databank.locate("hidden"), HiddenManager.getOrCreateInstance());
+        event.addListener(Databank.locate("multiblocks"), MultiblockManager.getOrCreateInstance());
+        event.addListener(Databank.locate("megastructures"), MegastructureManager.getOrCreateInstance());
+        event.addListener(Databank.locate("dialogue_trees"), DialogueTreeManager.getOrCreateInstance());
+        event.addListener(Databank.locate("instanced_dimensions"), InstancedDimensionManager.getOrCreateInstance());
     }
     @SubscribeEvent
     public static void onDatapackSync(OnDatapackSyncEvent event) {

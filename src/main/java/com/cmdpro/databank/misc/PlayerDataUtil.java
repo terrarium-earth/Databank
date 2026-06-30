@@ -3,14 +3,11 @@ package com.cmdpro.databank.misc;
 import com.cmdpro.databank.Databank;
 import com.cmdpro.databank.mixin.PlayerDataStorageAccessor;
 import com.cmdpro.databank.mixin.PlayerListAccessor;
-import com.mojang.authlib.GameProfile;
-import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.storage.PlayerDataStorage;
+import net.minecraft.util.Util;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
@@ -38,10 +35,7 @@ public class PlayerDataUtil {
     public static Optional<CompoundTag> load(MinecraftServer server, String path) {
         return load(server, path, ".dat");
     }
-    public static Optional<CompoundTag> load(MinecraftServer server, Player player) {
-        PlayerDataStorage storage = ((PlayerListAccessor)server.getPlayerList()).getPlayerIo();
-        return storage.load(player);
-    }
+
     public static File getPlayerDir(MinecraftServer server) {
         return ((PlayerDataStorageAccessor)(((PlayerListAccessor)server.getPlayerList()).getPlayerIo())).getPlayerDir();
     }
@@ -57,10 +51,7 @@ public class PlayerDataUtil {
             Databank.LOGGER.warn("Failed to save player data for {}", path);
         }
     }
-    public static void save(MinecraftServer server, Player player) {
-        PlayerDataStorage storage = ((PlayerListAccessor)server.getPlayerList()).getPlayerIo();
-        storage.save(player);
-    }
+
     public static List<String> getAllUUIDS(MinecraftServer server) {
         File playerDir = getPlayerDir(server);
         var files = playerDir.listFiles();

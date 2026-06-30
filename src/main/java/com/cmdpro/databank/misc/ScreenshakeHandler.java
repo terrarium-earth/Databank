@@ -5,7 +5,7 @@ import com.cmdpro.databank.config.DatabankClientConfig;
 import com.mojang.blaze3d.Blaze3D;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -74,7 +74,7 @@ public class ScreenshakeHandler {
         screenshakes.add(screenshake);
         return screenshake;
     }
-    @EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+    @EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID)
     protected static class GameEvents {
         @SubscribeEvent
         public static void onClientTick(ClientTickEvent.Pre event) {

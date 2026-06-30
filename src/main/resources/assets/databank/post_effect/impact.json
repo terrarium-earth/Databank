@@ -1,0 +1,46 @@
+{
+  "targets": {
+    "final": {}
+  },
+  "passes": [
+    {
+      "vertex_shader": "minecraft:core/screenquad",
+      "fragment_shader": "databank:post/impact",
+      "inputs": [
+        {
+          "sampler_name": "Diffuse",
+          "target": "minecraft:main"
+        },
+        {
+          "sampler_name": "Impact",
+          "target": "databank:impact"
+        },
+        {
+          "sampler_name": "FrozenImpact",
+          "target": "databank:frozen_impact"
+        }
+      ],
+      "output": "final",
+      "uniforms": {
+        "ColorInfo": [
+          {
+            "name": "alpha",
+            "type": "float",
+            "value": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "vertex_shader": "minecraft:core/screenquad",
+      "fragment_shader": "minecraft:post/blit",
+      "inputs": [
+        {
+          "sampler_name": "In",
+          "target": "final"
+        }
+      ],
+      "output": "minecraft:main"
+    }
+  ]
+}

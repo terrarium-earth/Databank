@@ -7,7 +7,7 @@ import com.cmdpro.databank.multiblock.predicates.serializers.AnyMultiblockPredic
 import com.cmdpro.databank.multiblock.predicates.serializers.BlockstateMultiblockPredicateSerializer;
 import com.cmdpro.databank.multiblock.predicates.serializers.TagMultiblockPredicateSerializer;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.GameMasterBlockItem;
 import net.minecraft.world.item.Item;

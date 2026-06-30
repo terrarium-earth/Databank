@@ -11,6 +11,7 @@ import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
+import org.joml.Vector2ic;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -26,9 +27,9 @@ public class DatabankModel {
     ).apply(instance, DatabankModel::new));
     public List<DatabankPartDefinition> parts;
     public Map<String, DatabankAnimation> animations;
-    public Vector2i textureSize;
+    public Vector2ic textureSize;
     public HashMap<String, DatabankPartData.DatabankBonePart> allBones = new HashMap<>();
-    public DatabankModel(List<DatabankPartDefinition> parts, Map<String, DatabankAnimation> animations, Vector2i textureSize) {
+    public DatabankModel(List<DatabankPartDefinition> parts, Map<String, DatabankAnimation> animations, Vector2ic textureSize) {
         this.parts = parts;
         this.animations = animations;
         this.textureSize = textureSize;

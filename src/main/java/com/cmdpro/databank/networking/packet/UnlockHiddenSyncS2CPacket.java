@@ -8,19 +8,19 @@ import com.cmdpro.databank.hidden.HiddenManager;
 import com.cmdpro.databank.networking.Message;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
 
-public record UnlockHiddenSyncS2CPacket(ResourceLocation hidden) implements Message {
+public record UnlockHiddenSyncS2CPacket(Identifier hidden) implements Message {
     public static UnlockHiddenSyncS2CPacket read(FriendlyByteBuf buf) {
-        ResourceLocation block = buf.readResourceLocation();
+        Identifier block = buf.readIdentifier();
         return new UnlockHiddenSyncS2CPacket(block);
     }
     public static void write(FriendlyByteBuf buf, UnlockHiddenSyncS2CPacket obj) {
-        buf.writeResourceLocation(obj.hidden);
+        buf.writeIdentifier(obj.hidden);
     }
     public static final Type<UnlockHiddenSyncS2CPacket> TYPE = new Type<>(Databank.locate("unlock_hidden_block_sync"));
     @Override

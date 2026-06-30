@@ -6,7 +6,7 @@ import com.cmdpro.databank.hidden.*;
 import com.cmdpro.databank.networking.Message;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -14,14 +14,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-public record UnlockedHiddenSyncS2CPacket(List<ResourceLocation> hidden, boolean updateListeners) implements Message {
+public record UnlockedHiddenSyncS2CPacket(List<Identifier> hidden, boolean updateListeners) implements Message {
     public static UnlockedHiddenSyncS2CPacket read(FriendlyByteBuf buf) {
-        List<ResourceLocation> blocks = buf.readList(FriendlyByteBuf::readResourceLocation);
+        List<Identifier> blocks = buf.readList(FriendlyByteBuf::readIdentifier);
         boolean updateListeners = buf.readBoolean();
         return new UnlockedHiddenSyncS2CPacket(blocks, updateListeners);
     }
     public static void write(FriendlyByteBuf buf, UnlockedHiddenSyncS2CPacket obj) {
-        buf.writeCollection(obj.hidden, FriendlyByteBuf::writeResourceLocation);
+        buf.writeCollection(obj.hidden, FriendlyByteBuf::writeIdentifier);
         buf.writeBoolean(obj.updateListeners);
     }
     public static final Type<UnlockedHiddenSyncS2CPacket> TYPE = new Type<>(Databank.locate("unlocked_hidden_block_sync"));
@@ -34,8 +34,8 @@ public record UnlockedHiddenSyncS2CPacket(List<ResourceLocation> hidden, boolean
     public void handleClient(Minecraft minecraft, Player player, IPayloadContext context) {
         if (updateListeners && !ClientHiddenListener.HIDDEN_LISTENERS.isEmpty()) {
             // We need to make a copy of the list to do our destructive comparisons below.
-            List<ResourceLocation> unlockedIds = new ArrayList<>(hidden);
-            List<ResourceLocation> lockedIds = new ArrayList<>(ClientHidden.unlocked);
+            List<Identifier> unlockedIds = new ArrayList<>(hidden);
+            List<Identifier> lockedIds = new ArrayList<>(ClientHidden.unlocked);
 
             // Any entries in locked should be removed from both sets, leaving us with one set
             // containing newly unhidden items and old items that are no longer unhidden.
@@ -46,7 +46,7 @@ public record UnlockedHiddenSyncS2CPacket(List<ResourceLocation> hidden, boolean
                 List<Hidden> unlockedList = new ArrayList<>(unlockedIds.size());
                 List<Hidden> lockedList = new ArrayList<>(lockedIds.size());
 
-                for (ResourceLocation id : lockedIds) {
+                for (Identifier id : lockedIds) {
                     Hidden i = HiddenManager.hidden.get(id);
                     if (i == null)
                         continue;
@@ -56,7 +56,7 @@ public record UnlockedHiddenSyncS2CPacket(List<ResourceLocation> hidden, boolean
 
                 ClientHiddenListener.HIDDEN_LISTENERS.forEach(listener -> listener.onHide(lockedList));
 
-                for (ResourceLocation id : unlockedIds) {
+                for (Identifier id : unlockedIds) {
                     Hidden i = HiddenManager.hidden.get(id);
                     if (i == null)
                         continue;

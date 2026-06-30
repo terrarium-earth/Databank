@@ -1,40 +1,57 @@
 package com.cmdpro.databank.megastructures.block.renderers;
 
 import com.cmdpro.databank.megastructures.block.MegastructureSaveBlockEntity;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.StructureBlockRenderer;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.blockentity.BlockEntityWithBoundingBoxRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityWithBoundingBoxRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.StructureUtils;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.StructureBlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.gizmos.GizmoStyle;
+import net.minecraft.gizmos.Gizmos;
+import net.minecraft.util.ARGB;
+import net.minecraft.world.level.block.entity.BoundingBoxRenderable;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 import java.awt.*;
 
-public class MegastructureSaveRenderer implements BlockEntityRenderer<MegastructureSaveBlockEntity> {
-    EntityRenderDispatcher renderDispatcher;
+public class MegastructureSaveRenderer implements BlockEntityRenderer<MegastructureSaveBlockEntity, MegastructureSaveRenderer.RenderState> {
     public MegastructureSaveRenderer(BlockEntityRendererProvider.Context rendererProvider) {
-        renderDispatcher = rendererProvider.getEntityRenderer();
     }
+
     @Override
-    public void render(MegastructureSaveBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        BlockPos corner1 = blockEntity.corner1;
-        BlockPos corner2 = blockEntity.corner2;
-        BlockPos center = blockEntity.center;
+    public RenderState createRenderState() {
+        return new RenderState();
+    }
+
+    @Override
+    public void extractRenderState(MegastructureSaveBlockEntity blockEntity, RenderState state, float partialTicks, Vec3 cameraPosition, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(blockEntity, state, partialTicks, cameraPosition, breakProgress);
+
+        if (blockEntity.corner1 != null && blockEntity.corner2 != null) {
+            BlockEntityWithBoundingBoxRenderer.extract(blockEntity, state);
+        }
+
+        state.corner1 = blockEntity.corner1;
+        state.corner2 = blockEntity.corner2;
+        state.center = blockEntity.center;
+    }
+
+    @Override
+    public void submit(RenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+        BlockPos corner1 = state.corner1;
+        BlockPos corner2 = state.corner2;
+        BlockPos center = state.center;
         Color color = Color.GREEN;
         Color centerColor = Color.WHITE;
         boolean complete = true;
         if (corner1 == null) {
-            corner1 = blockEntity.getBlockPos();
+            corner1 = state.blockPos;
             color = Color.RED;
             complete = false;
         }
@@ -53,56 +70,73 @@ public class MegastructureSaveRenderer implements BlockEntityRenderer<Megastruct
                 Math.max(corner1.getY(), corner2.getY()),
                 Math.max(corner1.getZ(), corner2.getZ())
         );
-        Vec3 renderOffset = blockEntity.getBlockPos().getCenter().subtract(0.5f, 0.5f, 0.5f).scale(-1);
+        Vec3 renderOffset = state.blockPos.getCenter().subtract(0.5f, 0.5f, 0.5f).scale(-1);
         Vec3 min = minBlock.getCenter().add(-0.5f, -0.5f, -0.5f).add(renderOffset);
         Vec3 max = maxBlock.getCenter().add(0.5f, 0.5f, 0.5f).add(renderOffset);
-        RenderSystem.disableDepthTest();
-        RenderSystem.enableBlend();
-        VertexConsumer vertexconsumer = bufferSource.getBuffer(RenderType.lines());
-        LevelRenderer.renderLineBox(poseStack, vertexconsumer, min.x, min.y, min.z, max.x, max.y, max.z, (float)color.getRed()/255f, (float)color.getGreen()/255f, (float)color.getBlue()/255f, 1.0F, ((float)color.getRed()/255f)/2f, ((float)color.getGreen()/255f)/2f, ((float)color.getBlue()/255f)/2f);
+
+        Gizmos.cuboid(
+            new AABB(min.x(), min.y(), min.z(), max.x(), max.y(), max.z()),
+            GizmoStyle.stroke(ARGB.color(255, color.getRGB())),
+            true
+        ).setAlwaysOnTop();
+
         if (complete) {
             if (center != null) {
                 Vec3 centerMin = center.getCenter().add(-0.5f, -0.5f, -0.5f).add(renderOffset);
                 Vec3 centerMax = center.getCenter().add(0.5f, 0.5f, 0.5f).add(renderOffset);
-                LevelRenderer.renderLineBox(poseStack, vertexconsumer, centerMin.x, centerMin.y, centerMin.z, centerMax.x, centerMax.y, centerMax.z, (float)centerColor.getRed()/255f, (float)centerColor.getGreen()/255f, (float)centerColor.getBlue()/255f, 1.0F, ((float)centerColor.getRed()/255f)/2f, ((float)centerColor.getGreen()/255f)/2f, ((float)centerColor.getBlue()/255f)/2f);
+
+                Gizmos.cuboid(
+                    new AABB(centerMin.x(), centerMin.y(), centerMin.z(), centerMax.x(), centerMax.y(), centerMax.z()),
+                    GizmoStyle.stroke(ARGB.color(255, centerColor.getRGB())),
+                    true
+                ).setAlwaysOnTop();
             }
         }
-        if (bufferSource instanceof MultiBufferSource.BufferSource source) {
-            source.endBatch(RenderType.lines());
-        }
-        RenderSystem.disableBlend();
-        RenderSystem.enableDepthTest();
-        if (complete) {
-            renderInvisibleBlocks(blockEntity, bufferSource, poseStack);
-        }
-    }
-    private void renderInvisibleBlocks(MegastructureSaveBlockEntity blockEntity, MultiBufferSource bufferSource, PoseStack poseStack) {
-        BlockGetter blockgetter = blockEntity.getLevel();
-        VertexConsumer vertexconsumer = bufferSource.getBuffer(RenderType.lines());
-        BlockPos blockpos = blockEntity.getBlockPos();
-        BlockPos corner1 = blockEntity.corner1;
-        BlockPos corner2 = blockEntity.corner2;
 
-        for (BlockPos i : BlockPos.betweenClosed(corner1, corner2)) {
-            BlockState blockstate = blockgetter.getBlockState(i);
-            boolean structureVoid = blockstate.is(Blocks.STRUCTURE_VOID);
-            boolean barrier = blockstate.is(Blocks.BARRIER);
-            boolean light = blockstate.is(Blocks.LIGHT);
-            if (structureVoid || barrier || light) {
-                double d0 = (double)((float)(i.getX() - blockpos.getX()) + 0.45F);
-                double d1 = (double)((float)(i.getY() - blockpos.getY()) + 0.45F);
-                double d2 = (double)((float)(i.getZ() - blockpos.getZ()) + 0.45F);
-                double d3 = (double)((float)(i.getX() - blockpos.getX()) + 0.55F);
-                double d4 = (double)((float)(i.getY() - blockpos.getY()) + 0.55F);
-                double d5 = (double)((float)(i.getZ() - blockpos.getZ()) + 0.55F);
-                if (structureVoid) {
-                    LevelRenderer.renderLineBox(poseStack, vertexconsumer, d0, d1, d2, d3, d4, d5, 1.0F, 0.75F, 0.75F, 1.0F, 1.0F, 0.75F, 0.75F);
-                } else if (barrier) {
-                    LevelRenderer.renderLineBox(poseStack, vertexconsumer, d0, d1, d2, d3, d4, d5, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 0.0F, 0.0F);
-                } else if (light) {
-                    LevelRenderer.renderLineBox(poseStack, vertexconsumer, d0, d1, d2, d3, d4, d5, 1.0F, 1.0F, 0.0F, 1.0F, 1.0F, 1.0F, 0.0F);
+        renderInvisibleBlocks(state);
+    }
+
+    private void renderInvisibleBlocks(RenderState state) {
+        if (state.invisibleBlocks == null) {
+            return;
+        }
+
+        BoundingBoxRenderable.RenderableBox box = state.box;
+        var size = box.size();
+        var startingPos = box.localPos();
+
+        for (int x = 0; x < size.getX(); x++) {
+            for (int y = 0; y < size.getY(); y++) {
+                for (int z = 0; z < size.getZ(); z++) {
+                    int index = z * size.getX() * size.getY() + y * size.getX() + x;
+
+                    BlockEntityWithBoundingBoxRenderState.InvisibleBlockType invisibleBlockType = state.invisibleBlocks[index];
+                    if (invisibleBlockType == null) {
+                        continue;
+                    }
+
+                    double renderX0 = startingPos.getX() + x + 0.45F;
+                    double renderY0 = startingPos.getY() + y + 0.45F;
+                    double renderZ0 = startingPos.getZ() + z + 0.45F;
+                    double renderX1 = startingPos.getX() + x + 0.55F;
+                    double renderY1 = startingPos.getY() + y + 0.55F;
+                    double renderZ1 = startingPos.getZ() + z + 0.55F;
+                    AABB aabb = new AABB(renderX0, renderY0, renderZ0, renderX1, renderY1, renderZ1);
+                    if (invisibleBlockType == BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.STRUCTURE_VOID) {
+                        Gizmos.cuboid(aabb, GizmoStyle.stroke(ARGB.colorFromFloat(1.0F, 1.0F, 0.75F, 0.75F)));
+                    } else if (invisibleBlockType == BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.BARRIER) {
+                        Gizmos.cuboid(aabb, GizmoStyle.stroke(-65536));
+                    } else if (invisibleBlockType == BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.LIGHT) {
+                        Gizmos.cuboid(aabb, GizmoStyle.stroke(-256));
+                    }
                 }
             }
         }
+    }
+
+    public static class RenderState extends BlockEntityWithBoundingBoxRenderState {
+        public BlockPos corner1;
+        public BlockPos corner2;
+        public BlockPos center;
     }
 }

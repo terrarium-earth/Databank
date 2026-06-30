@@ -7,8 +7,6 @@
     "BlockBehaviourMixin",
     "BlockStateBaseMixin",
     "PlayerAdvancementsAccessor",
-    "ChunkMapAccessor",
-    "DelegateBorderChangeListenerAccessor",
     "MinecraftServerAccessor",
     "WorldBorderAccessor",
     "PlayerListAccessor",
@@ -20,20 +18,18 @@
     "client.BlockModelShaperMixin",
     "client.BufferSourceMixin",
     "client.GameRendererMixin",
-    "client.ItemBlockRenderTypesMixin",
+    "client.GuiRendererMixin",
     "client.ItemMixin",
     "client.ItemModelShaperMixin",
-    "client.LevelRendererMixin",
     "client.RenderBuffersMixin",
-    "client.ItemColorsMixin",
+    "client.RenderTypeMixin",
     "client.SoundEngineMixin",
     "client.ChannelMixin",
     "client.SoundManagerMixin",
     "client.ChannelHandleMixin",
     "client.ClientAdvancementsMixin",
     "client.BlockColorsAccessor",
-    "client.ItemColorsAccessor",
-    "client.ItemRendererAccessor",
-    "client.DarkModeEverywhereClientProxyMixin"
+    "client.DarkModeEverywhereClientProxyMixin",
+    "client.LocalPlayerMixin"
   ]
 }

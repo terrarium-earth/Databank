@@ -3,30 +3,17 @@ package com.cmdpro.databank.multiblock;
 import com.cmdpro.databank.multiblock.predicates.AnyMultiblockPredicate;
 import com.cmdpro.databank.multiblock.predicates.BlockstateMultiblockPredicate;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.lighting.LevelLightEngine;
-import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class Multiblock implements BlockAndTintGetter {
+public class Multiblock {
     public Map<BlockPos, BlockEntity> blockEntityCache = new Object2ObjectOpenHashMap<>();
-    public Set<BlockEntity> erroredBlockEntities = Collections.newSetFromMap(new WeakHashMap<>());
     public String[][] multiblockLayers;
     public Map<Character, MultiblockPredicate> key;
     public BlockPos center;
@@ -136,66 +123,5 @@ public class Multiblock implements BlockAndTintGetter {
         }
         public MultiblockPredicate predicate;
         public BlockPos offset;
-    }
-
-
-    @Nullable
-    @Override
-    public BlockEntity getBlockEntity(BlockPos pos) {
-        BlockState state = this.getBlockState(pos);
-        if (state.getBlock() instanceof EntityBlock eb) {
-            return blockEntityCache.computeIfAbsent(pos.immutable(), p -> eb.newBlockEntity(p, state));
-        }
-        return null;
-    }
-
-    @Override
-    public BlockState getBlockState(BlockPos pos) {
-        if (pos.getY() >= 0 && pos.getY() < states.size() && pos.getZ() >= 0 && pos.getZ() < states.get(pos.getY()).size() && pos.getX() >= 0 && pos.getX() < states.get(pos.getY()).get(pos.getZ()).size()) {
-            return states.get(pos.getY()).get(pos.getZ()).get(pos.getX()).predicate.getVisual();
-        }
-        return Blocks.AIR.defaultBlockState();
-    }
-
-    @Override
-    public FluidState getFluidState(BlockPos pos) {
-        return Fluids.EMPTY.defaultFluidState();
-    }
-
-    @Override
-    public float getShade(Direction direction, boolean shaded) {
-        return 1.0F;
-    }
-
-    @Override
-    public LevelLightEngine getLightEngine() {
-        return null;
-    }
-
-    @Override
-    public int getBlockTint(BlockPos pos, ColorResolver color) {
-        var plains = Minecraft.getInstance().level.registryAccess().registryOrThrow(Registries.BIOME)
-                .getOrThrow(Biomes.PLAINS);
-        return color.getColor(plains, pos.getX(), pos.getZ());
-    }
-
-    @Override
-    public int getBrightness(LightLayer type, BlockPos pos) {
-        return 15;
-    }
-
-    @Override
-    public int getRawBrightness(BlockPos pos, int ambientDarkening) {
-        return 15 - ambientDarkening;
-    }
-
-    @Override
-    public int getHeight() {
-        return Minecraft.getInstance().level.getHeight();
-    }
-
-    @Override
-    public int getMinBuildHeight() {
-        return Minecraft.getInstance().level.getMinBuildHeight();
     }
 }

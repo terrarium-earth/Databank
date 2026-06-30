@@ -11,7 +11,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 
 public class NotCondition extends HiddenCondition {
@@ -41,7 +41,7 @@ public class NotCondition extends HiddenCondition {
             value.condition.getSerializer().streamCodec().encode(buf, value.condition);
         }, (buf) -> {
             ResourceKey<Serializer<?>> conditionKey = buf.readResourceKey(DatabankRegistries.HIDDEN_CONDITION_REGISTRY_KEY);
-            HiddenCondition.Serializer<?> conditionSerializer = DatabankRegistries.HIDDEN_CONDITION_REGISTRY.get(conditionKey);
+            HiddenCondition.Serializer<?> conditionSerializer = DatabankRegistries.HIDDEN_CONDITION_REGISTRY.getValueOrThrow(conditionKey);
             HiddenCondition condition = conditionSerializer.streamCodec().decode(buf);
             return new NotCondition(condition);
         });

@@ -1,39 +1,31 @@
 package com.cmdpro.databank.hidden.types;
 
-import com.cmdpro.databank.DatabankUtils;
-import com.cmdpro.databank.config.DatabankClientConfig;
 import com.cmdpro.databank.hidden.Hidden;
 import com.cmdpro.databank.hidden.HiddenManager;
 import com.cmdpro.databank.hidden.HiddenTypeInstance;
-import com.cmdpro.databank.mixin.client.BlockColorsAccessor;
-import com.cmdpro.databank.mixin.client.ItemColorsAccessor;
-import com.cmdpro.databank.registry.HiddenTypeRegistry;
-import com.cmdpro.databank.rendering.ShaderHelper;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.color.item.ItemColor;
-import net.minecraft.client.color.item.ItemColors;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public class ItemHiddenType extends HiddenTypeInstance.HiddenType<ItemHiddenType.ItemHiddenTypeInstance> {
     public static final ItemHiddenType INSTANCE = new ItemHiddenType();
     public static final MapCodec<ItemHiddenTypeInstance> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceKey.codec(Registries.ITEM).fieldOf("original").xmap(BuiltInRegistries.ITEM::get, (i) -> BuiltInRegistries.ITEM.getResourceKey(i).orElseThrow()).forGetter((type) -> type.original),
-            ResourceKey.codec(Registries.ITEM).fieldOf("hidden_as").xmap(BuiltInRegistries.ITEM::get, (i) -> BuiltInRegistries.ITEM.getResourceKey(i).orElseThrow()).forGetter((type) -> type.hiddenAs),
+            BuiltInRegistries.ITEM.byNameCodec().fieldOf("original").forGetter((type) -> type.original),
+            BuiltInRegistries.ITEM.byNameCodec().fieldOf("hidden_as").forGetter((type) -> type.hiddenAs),
             ComponentSerialization.CODEC.optionalFieldOf("name_override").forGetter((type) -> type.nameOverride)
     ).apply(instance, ItemHiddenTypeInstance::new));
 
@@ -50,8 +42,8 @@ public class ItemHiddenType extends HiddenTypeInstance.HiddenType<ItemHiddenType
     }, (buf) -> {
         ResourceKey<Item> originalKey = buf.readResourceKey(Registries.ITEM);
         ResourceKey<Item> hiddenAsKey = buf.readResourceKey(Registries.ITEM);
-        Item original = BuiltInRegistries.ITEM.get(originalKey);
-        Item hiddenAs = BuiltInRegistries.ITEM.get(hiddenAsKey);
+        Item original = BuiltInRegistries.ITEM.getValueOrThrow(originalKey);
+        Item hiddenAs = BuiltInRegistries.ITEM.getValueOrThrow(hiddenAsKey);
         Optional<Component> nameOverride = buf.readOptional((buf2) -> ComponentSerialization.STREAM_CODEC.decode((RegistryFriendlyByteBuf) buf2));
         return new ItemHiddenTypeInstance(original, hiddenAs, nameOverride);
     });
@@ -66,13 +58,8 @@ public class ItemHiddenType extends HiddenTypeInstance.HiddenType<ItemHiddenType
         cache.clear();
     }
 
-    @Override
-    public void onRecieveClient() {
-        ClientHandler.updateItemColors();
-    }
-
     public static boolean isVisible(Item item, Player player) {
-        if (player.level().isClientSide) {
+        if (player.level().isClientSide()) {
             return isVisibleClient(item);
         }
         return getHiddenItem(item, player) == null;
@@ -81,7 +68,7 @@ public class ItemHiddenType extends HiddenTypeInstance.HiddenType<ItemHiddenType
         return getHiddenItemClient(item) == null;
     }
     public static Item getHiddenItem(Item item, Player player) {
-        if (player.level().isClientSide) {
+        if (player.level().isClientSide()) {
             return getHiddenItemClient(item);
         }
         for (Hidden i : HiddenManager.hidden.values()) {
@@ -130,7 +117,7 @@ public class ItemHiddenType extends HiddenTypeInstance.HiddenType<ItemHiddenType
     public static Item getHiddenItemClient(Item item) {
         Hidden hidden = cache.get(item);
         if (!cache.containsKey(item)) {
-            for (Map.Entry<ResourceLocation, Hidden> i : new HashMap<>(HiddenManager.hidden).entrySet()) {
+            for (Map.Entry<Identifier, Hidden> i : new HashMap<>(HiddenManager.hidden).entrySet()) {
                 if (i.getValue().type instanceof ItemHiddenTypeInstance type) {
                     if (type.original == null || type.hiddenAs == null) {
                         continue;
@@ -151,6 +138,25 @@ public class ItemHiddenType extends HiddenTypeInstance.HiddenType<ItemHiddenType
         }
         return null;
     }
+
+    public static Identifier hiddenItemModel(Identifier identifier) {
+        var hiddenItem = BuiltInRegistries.ITEM.get(identifier)
+            .map(holder -> ItemHiddenType.getHiddenItemClient(holder.value()))
+            .orElse(null);
+
+        if (hiddenItem == null) {
+            return null;
+        }
+
+        Identifier newEffectiveModel = hiddenItem.builtInRegistryHolder().components().get(DataComponents.ITEM_MODEL);
+
+        if (identifier.equals(newEffectiveModel)) {
+            return null;
+        }
+
+        return newEffectiveModel;
+    }
+
     private static HashMap<Item, Hidden> cache = new HashMap<>();
     public static class ItemHiddenTypeInstance extends HiddenTypeInstance<Item> {
         public Item original;
@@ -171,57 +177,5 @@ public class ItemHiddenType extends HiddenTypeInstance.HiddenType<ItemHiddenType
             return INSTANCE;
         }
 
-    }
-    private static class ClientHandler {
-        static HashMap<Item, ItemColor> overriden = new HashMap<>();
-        public static void updateItemColors() {
-            if (!ShaderHelper.isSodiumOrSimilarActive() && !DatabankClientConfig.forceAlternateHiddenColors) {
-                return;
-            }
-            ItemColors colors = Minecraft.getInstance().getItemColors();
-            HashMap<Item, ItemHiddenTypeInstance> wrappingData = new HashMap<>();
-            for (Hidden i : HiddenTypeRegistry.ITEM.get().getHiddenOfType().values()) {
-                if (i.type instanceof ItemHiddenTypeInstance instance) {
-                    Item item = instance.original;
-                    wrappingData.put(item, instance);
-                    if (!overriden.containsKey(item)) {
-                        ItemColor color = ((ItemColorsAccessor) colors).getItemColors().get(item);
-                        if (color != null) {
-                            overriden.put(item, color);
-                        }
-                    }
-                }
-            }
-            List<Item> itemsNotWrapped = new ArrayList<>(overriden.keySet());
-            for (Map.Entry<Item, ItemHiddenTypeInstance> i : wrappingData.entrySet()) {
-                ItemColor original = overriden.get(i.getKey());
-                ItemColor wrapped = createWrapped(original, i.getValue());
-                ((ItemColorsAccessor) colors).getItemColors().remove(i.getKey());
-                colors.register(wrapped, i.getKey());
-            }
-            for (Item i : itemsNotWrapped) {
-                ((ItemColorsAccessor) colors).getItemColors().remove(i);
-                colors.register(overriden.get(i), i);
-                overriden.remove(i);
-            }
-        }
-        public static ItemColor createWrapped(ItemColor original, ItemHiddenTypeInstance instance) {
-            ItemColors colors = Minecraft.getInstance().getItemColors();
-            ItemColor wrapped = (stack, tintIndex) -> {
-                if (instance != null) {
-                    if (instance.isHiddenClient(instance.original)) {
-                        Item hiddenAs = instance.hiddenAs;
-                        if (hiddenAs != instance.original) {
-                            return colors.getColor(DatabankUtils.changeItemType(stack, hiddenAs), tintIndex);
-                        }
-                    }
-                }
-                if (original != null) {
-                    return original.getColor(stack, tintIndex);
-                }
-                return 0xFFFFFFFF;
-            };
-            return wrapped;
-        }
     }
 }

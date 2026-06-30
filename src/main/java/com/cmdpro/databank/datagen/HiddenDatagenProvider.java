@@ -7,17 +7,15 @@ import com.cmdpro.databank.hidden.HiddenTypeInstance;
 import com.cmdpro.databank.hidden.conditions.*;
 import com.cmdpro.databank.hidden.types.BlockHiddenType;
 import com.cmdpro.databank.hidden.types.ItemHiddenType;
-import com.mojang.serialization.Codec;
 import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.critereon.StatePropertiesPredicate;
+import net.minecraft.advancements.criterion.StatePropertiesPredicate;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackType;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.common.data.JsonCodecProvider;
 
 import java.util.ArrayList;
@@ -25,14 +23,14 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class HiddenDatagenProvider extends JsonCodecProvider<Hidden> {
-    public HiddenDatagenProvider(PackOutput output, CompletableFuture lookupProvider, String modId, ExistingFileHelper existingFileHelper) {
-        super(output, PackOutput.Target.DATA_PACK, "databank/hidden", PackType.SERVER_DATA, HiddenSerializer.ORIGINAL_CODEC, lookupProvider, modId, existingFileHelper);
+    public HiddenDatagenProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider, String modId) {
+        super(output, PackOutput.Target.DATA_PACK, "databank/hidden", HiddenSerializer.ORIGINAL_CODEC, lookupProvider, modId);
     }
     @Override
     public String getName() {
         return "Hidden";
     }
-    public void createHidden(ResourceLocation id, HiddenTypeInstance<?> instance, HiddenCondition condition) {
+    public void createHidden(Identifier id, HiddenTypeInstance<?> instance, HiddenCondition condition) {
         unconditional(id, new Hidden(instance, condition));
     }
     public BlockHiddenType.BlockHiddenTypeInstance createBlockInstance(Block original, Block hiddenAs) {

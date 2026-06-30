@@ -18,7 +18,7 @@ public class MusicController {
     private SoundEvent musicSoundEvent;
     public SoundEvent getMusic() {
         if (musicSoundEvent == null) {
-            musicSoundEvent = SoundEvent.createVariableRangeEvent(music.location());
+            musicSoundEvent = SoundEvent.createVariableRangeEvent(music.identifier());
         }
         return musicSoundEvent;
     }

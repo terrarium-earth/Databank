@@ -5,22 +5,23 @@ import com.cmdpro.databank.music.MusicController;
 import com.cmdpro.databank.music.MusicSerializer;
 import com.google.gson.*;
 import com.mojang.serialization.JsonOps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.FileToIdConverter;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.neoforge.common.conditions.ICondition;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class MegastructureManager extends SimpleJsonResourceReloadListener {
-    public static HashMap<ResourceLocation, Megastructure> megastructures = new HashMap<>();
-    protected static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
+public class MegastructureManager extends SimpleJsonResourceReloadListener<JsonElement> {
+    public static HashMap<Identifier, Megastructure> megastructures = new HashMap<>();
 
     public static MegastructureManager instance;
     protected MegastructureManager() {
-        super(GSON, "databank/megastructures");
+        super(ExtraCodecs.JSON, FileToIdConverter.json("databank/megastructures"));
     }
     public static MegastructureManager getOrCreateInstance() {
         if (instance == null) {
@@ -29,11 +30,11 @@ public class MegastructureManager extends SimpleJsonResourceReloadListener {
         return instance;
     }
     @Override
-    protected void apply(Map<ResourceLocation, JsonElement> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
+    protected void apply(Map<Identifier, JsonElement> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
         megastructures = new HashMap<>();
         Databank.LOGGER.info("[DATABANK] Adding Databank Megastructures");
-        for (Map.Entry<ResourceLocation, JsonElement> i : pObject.entrySet()) {
-            ResourceLocation location = i.getKey();
+        for (Map.Entry<Identifier, JsonElement> i : pObject.entrySet()) {
+            Identifier location = i.getKey();
             if (location.getPath().startsWith("_")) {
                 continue;
             }

@@ -1,35 +1,20 @@
 package com.cmdpro.databank.model.blockentity;
 
-import com.cmdpro.databank.model.*;
-import com.cmdpro.databank.model.animation.DatabankAnimationState;
+import com.cmdpro.databank.model.BaseDatabankModel;
+import com.cmdpro.databank.model.ModelPose;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
-import net.minecraft.client.animation.AnimationChannel;
-import net.minecraft.client.animation.Keyframe;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.function.Function;
-
-public abstract class DatabankBlockEntityModel<T extends BlockEntity> extends BaseDatabankModel<T> {
-    public void render(T pEntity, float partialTick, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay, int pColor, Vec3 normalMult) {
-        renderModel(pEntity, partialTick, pPoseStack, pBuffer, pPackedLight, pPackedOverlay, pColor, normalMult);
+public abstract class DatabankBlockEntityModel<T extends BlockEntityRenderState> extends BaseDatabankModel<T> {
+    public void submit(T pEntity, PoseStack pPoseStack, SubmitNodeCollector submitNodeCollector, int pPackedOverlay, int pColor, Vec3 normalMult) {
+        submitModel(pEntity, pPoseStack, submitNodeCollector, pPackedOverlay, pColor, normalMult);
     }
-    public void renderModel(T pEntity, float partialTick, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay, int pColor, Vec3 normalMult) {
+    public void submitModel(T pEntity, PoseStack pPoseStack, SubmitNodeCollector submitNodeCollector, int pPackedOverlay, int pColor, Vec3 normalMult) {
         for (ModelPose.ModelPosePart i : modelPose.parts) {
-            renderPartAndChildren(pEntity, partialTick, pPoseStack, pBuffer, pPackedLight, pPackedOverlay, pColor, i, normalMult);
+            submitPartAndChildren(pEntity, pPoseStack, submitNodeCollector, pPackedOverlay, pEntity.lightCoords, pColor, i, normalMult);
         }
     }
 }

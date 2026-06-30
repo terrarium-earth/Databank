@@ -36,10 +36,7 @@ public abstract class BasicMegablockCore extends Block implements MegablockCore 
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        super.onRemove(state, level, pos, newState, movedByPiston);
-        if (state.getBlock() != newState.getBlock()) {
-            MegablockCoreUtil.removeRouters(this, getRotation(state), level, pos);
-        }
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        MegablockCoreUtil.removeRouters(this, getRotation(state), level, pos);
     }
 }

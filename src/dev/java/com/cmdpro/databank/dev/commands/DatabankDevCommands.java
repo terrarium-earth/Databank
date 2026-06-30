@@ -23,7 +23,7 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -35,7 +35,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 import java.util.List;
 
-@EventBusSubscriber(modid = DatabankDev.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = DatabankDev.MOD_ID)
 public class DatabankDevCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher){
         dispatcher.register(Commands.literal(DatabankDev.MOD_ID)
@@ -68,7 +68,7 @@ public class DatabankDevCommands {
         ServerPlayer player = command.getSource().getPlayer();
         Vec3 pos = player.position();
         Vec2 look = player.getRotationVector();
-        player.teleportTo(dimension, pos.x, pos.y, pos.z, look.x, look.y);
+        player.teleportTo(dimension, pos.x(), pos.y(), pos.z(), look.x(), look.y());
         command.getSource().sendSuccess(Component::empty, true);
         return Command.SINGLE_SUCCESS;
     }

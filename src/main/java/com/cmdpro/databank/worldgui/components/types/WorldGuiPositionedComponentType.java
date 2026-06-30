@@ -1,26 +1,16 @@
 package com.cmdpro.databank.worldgui.components.types;
 
-import com.cmdpro.databank.worldgui.WorldGui;
-import com.cmdpro.databank.worldgui.components.WorldGuiComponent;
 import com.cmdpro.databank.worldgui.components.WorldGuiComponentType;
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.datafixers.Products;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import org.jspecify.annotations.NonNull;
 
 public abstract class WorldGuiPositionedComponentType extends WorldGuiComponentType {
-    @Override
-    public void saveData(WorldGuiComponent component, CompoundTag tag) {
-        if (component instanceof WorldGuiPositionedComponent positionedComponent) {
-            tag.putInt("x", positionedComponent.x);
-            tag.putInt("y", positionedComponent.y);
-        }
-    }
-
-    @Override
-    public WorldGuiComponent loadData(WorldGui gui, CompoundTag tag) {
-        if (createComponent(gui) instanceof WorldGuiPositionedComponent positionedComponent) {
-            positionedComponent.x = tag.getInt("x");
-            positionedComponent.y = tag.getInt("y");
-            return positionedComponent;
-        }
-        return null;
+    protected static <T extends WorldGuiPositionedComponent> Products.@NonNull P2<RecordCodecBuilder.Mu<T>, Integer, Integer> positionedCodecParts() {
+        return new Products.P2<>(
+            Codec.INT.optionalFieldOf("x", 0).forGetter((component) -> component.x),
+            Codec.INT.optionalFieldOf("y", 0).forGetter((component) -> component.y)
+        );
     }
 }

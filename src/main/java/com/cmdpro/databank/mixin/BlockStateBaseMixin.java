@@ -31,7 +31,7 @@ public abstract class BlockStateBaseMixin {
             Entity contextEntity = entityShapeContext.getEntity();
             if (contextEntity instanceof Player player) {
                 if ((Object)this instanceof BlockState state) {
-                    if (player.level().isClientSide) {
+                    if (player.level().isClientSide()) {
                         Block block = BlockHiddenType.getHiddenBlockClient(state);
                         if (block != null && block != state.getBlock()) {
                             cir.setReturnValue(DatabankUtils.changeBlockType(state, block).getShape(level, pos, context));

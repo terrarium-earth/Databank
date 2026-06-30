@@ -15,7 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Block;
@@ -31,7 +31,7 @@ public class AdvancementCondition extends HiddenCondition {
     @Override
     public boolean isUnlocked(Player player) {
         if (player != null) {
-            AdvancementHolder advancement2 = ServerLifecycleHooks.getCurrentServer().getAdvancements().get(advancement.location());
+            AdvancementHolder advancement2 = ServerLifecycleHooks.getCurrentServer().getAdvancements().get(advancement.identifier());
             if (advancement2 != null) {
                 return ((ServerPlayer) player).getAdvancements().getOrStartProgress(advancement2).isDone();
             } else {

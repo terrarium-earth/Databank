@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.Resource;
@@ -36,14 +36,6 @@ import java.util.concurrent.Executor;
 
 @EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID)
 public class MusicSystem {
-    public static void init() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc == null) {
-            return;
-        }
-        if (mc.getResourceManager() instanceof ReloadableResourceManager resourceManager)
-            resourceManager.registerReloadListener(MusicManager.getOrCreateInstance());
-    }
     public static SimpleSoundInstance music;
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event)
@@ -71,7 +63,7 @@ public class MusicSystem {
                 {
                     manager.stop(music);
                 } else {
-                    if (!music.getLocation().equals(mus.getLocation())) {
+                    if (!music.getIdentifier().equals(mus.location())) {
                         manager.stop(music);
                     }
                 }

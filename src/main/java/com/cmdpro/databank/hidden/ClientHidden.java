@@ -1,10 +1,10 @@
 package com.cmdpro.databank.hidden;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClientHidden {
-    public static List<ResourceLocation> unlocked = new ArrayList<>();
+    public static List<Identifier> unlocked = new ArrayList<>();
 }

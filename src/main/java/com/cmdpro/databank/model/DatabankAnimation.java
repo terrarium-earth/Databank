@@ -10,6 +10,7 @@ import net.minecraft.client.animation.Keyframe;
 import net.minecraft.client.animation.KeyframeAnimations;
 import net.minecraft.util.ExtraCodecs;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,16 +68,16 @@ public class DatabankAnimation {
                 Codec.STRING.fieldOf("interpolation").forGetter((keyframe) -> keyframe.interpolation)
         ).apply(instance, AnimationKeyframe::new));
         public float timestamp;
-        public Vector3f target;
+        public Vector3fc target;
         public String interpolation;
-        public AnimationKeyframe(float timestamp, Vector3f target, String interpolation) {
+        public AnimationKeyframe(float timestamp, Vector3fc target, String interpolation) {
             this.timestamp = timestamp;
             this.target = target;
             this.interpolation = interpolation;
         }
         public Target targetChannel;
         public Keyframe createKeyframe() {
-            Vector3f target = getTarget();
+            var target = getTarget();
             AnimationChannel.Interpolation interpolation = getInterpolation();
             assert interpolation != null;
             return new Keyframe(timestamp, target, interpolation);
@@ -90,16 +91,16 @@ public class DatabankAnimation {
             }
             return null;
         }
-        private Vector3f getTarget() {
-            Vector3f target = this.target;
+        private Vector3fc getTarget() {
+            var target = this.target;
             if (targetChannel == POSITION) {
-                target = KeyframeAnimations.posVec(target.x, target.y, target.z);
+                target = KeyframeAnimations.posVec(target.x(), target.y(), target.z());
             }
             if (targetChannel == ROTATION) {
-                target = KeyframeAnimations.degreeVec(target.x, target.y, target.z);
+                target = KeyframeAnimations.degreeVec(target.x(), target.y(), target.z());
             }
             if (targetChannel == SCALE) {
-                target = KeyframeAnimations.scaleVec(target.x, target.y, target.z);
+                target = KeyframeAnimations.scaleVec(target.x(), target.y(), target.z());
             }
             return target;
         }

@@ -8,7 +8,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.common.conditions.ConditionalOps;
 import net.neoforged.neoforge.common.conditions.ICondition;
 import net.neoforged.neoforge.common.conditions.WithConditions;
@@ -23,7 +23,7 @@ public class HiddenSerializer {
             HIDDEN_CONDITION_CODEC.fieldOf("condition").forGetter((controller) -> controller.condition)
     ).apply(instance, Hidden::new));
     public static final Codec<Optional<WithConditions<Hidden>>> CODEC = ConditionalOps.createConditionalCodecWithConditions(ORIGINAL_CODEC);
-    public Hidden read(ResourceLocation entryId, JsonObject json) {
+    public Hidden read(Identifier entryId, JsonObject json) {
         return ICondition.getWithWithConditionsCodec(CODEC, JsonOps.INSTANCE, json).orElse(null);
     }
     public static final StreamCodec<RegistryFriendlyByteBuf, Hidden> STREAM_CODEC = StreamCodec.of((buf, value) -> {
@@ -33,10 +33,10 @@ public class HiddenSerializer {
         value.condition.getSerializer().streamCodec().encode(buf, value.condition);
     }, (buf) -> {
         ResourceKey<HiddenTypeInstance.HiddenType<?>> key = buf.readResourceKey(DatabankRegistries.HIDDEN_TYPE_REGISTRY_KEY);
-        HiddenTypeInstance.HiddenType<?> serializer = DatabankRegistries.HIDDEN_TYPE_REGISTRY.get(key);
+        HiddenTypeInstance.HiddenType<?> serializer = DatabankRegistries.HIDDEN_TYPE_REGISTRY.getValueOrThrow(key);
         HiddenTypeInstance<?> type = serializer.streamCodec().decode(buf);
         ResourceKey<HiddenCondition.Serializer<?>> conditionKey = buf.readResourceKey(DatabankRegistries.HIDDEN_CONDITION_REGISTRY_KEY);
-        HiddenCondition.Serializer<?> conditionSerializer = DatabankRegistries.HIDDEN_CONDITION_REGISTRY.get(conditionKey);
+        HiddenCondition.Serializer<?> conditionSerializer = DatabankRegistries.HIDDEN_CONDITION_REGISTRY.getValueOrThrow(conditionKey);
         HiddenCondition condition = conditionSerializer.streamCodec().decode(buf);
         return new Hidden(type, condition);
     });

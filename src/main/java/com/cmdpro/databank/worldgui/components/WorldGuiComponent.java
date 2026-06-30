@@ -1,54 +1,69 @@
 package com.cmdpro.databank.worldgui.components;
 
+import com.cmdpro.databank.DatabankRegistries;
 import com.cmdpro.databank.worldgui.WorldGui;
 import com.cmdpro.databank.worldgui.WorldGuiEntity;
 import com.cmdpro.databank.worldgui.WorldGuiHitResult;
-import com.cmdpro.databank.worldgui.WorldGuiType;
+import com.mojang.serialization.Codec;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
 
-import java.util.UUID;
-
 public abstract class WorldGuiComponent {
-    public UUID uuid;
-    public WorldGui gui;
-    public abstract void render(GuiGraphics guiGraphics);
-    public void leftClick(boolean isClient, Player player, int x, int y) {}
-    public void rightClick(boolean isClient, Player player, int x, int y) {}
-    public abstract void sendData(CompoundTag tag);
-    public abstract void recieveData(CompoundTag tag);
+    public static final Codec<WorldGuiComponent> CODEC = DatabankRegistries.WORLD_GUI_COMPONENT_REGISTRY.byNameCodec().dispatch(
+        WorldGuiComponent::getType,
+        WorldGuiComponentType::codec
+    );
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, WorldGuiComponent> STREAM_CODEC = ByteBufCodecs.registry(
+        DatabankRegistries.WORLD_GUI_COMPONENT_REGISTRY_KEY).dispatch(
+        WorldGuiComponent::getType,
+        WorldGuiComponentType::streamCodec
+    );
+
+    public abstract void render(WorldGui gui, GuiGraphicsExtractor guiGraphics);
+
+    public void leftClick(boolean isClient, Player player, int x, int y) {
+    }
+
+    public void rightClick(boolean isClient, Player player, int x, int y) {
+    }
+
     public abstract WorldGuiComponentType getType();
-    public int getDrawPriority() { return 0; }
-    public WorldGuiComponent(WorldGui gui) {
-        this.gui = gui;
-        this.uuid = UUID.randomUUID();
+
+    public int getDrawPriority() {
+        return 0;
     }
-    public void sync() {
-        gui.entity.syncData();
-    }
+
     public boolean isPosInBounds(int x, int y, int minX, int minY, int maxX, int maxY) {
         return x >= minX && x <= maxX && y >= minY && y <= maxY;
     }
-    public int normalXIntoGuiX(double normalX) {
-        return (int)(normalX*gui.getType().getRenderSize().x);
+
+    public int normalXIntoGuiX(WorldGui gui, double normalX) {
+        return (int) (normalX * gui.getType().getRenderSize().x);
     }
-    public int normalYIntoGuiY(double normalY) {
-        return (int)(normalY*gui.getType().getRenderSize().y);
+
+    public int normalYIntoGuiY(WorldGui gui, double normalY) {
+        return (int) (normalY * gui.getType().getRenderSize().y);
     }
-    public Vec2 getClientTargetNormal() {
+
+    public Vec2 getClientTargetNormal(WorldGui gui) {
         WorldGuiEntity entity = ClientHandler.getClientTargetGui();
-        if (entity != null && entity.gui == gui) {
+        if (entity != null && entity.getGuiData() == gui) {
             return ClientHandler.getClientTargetNormal();
         }
         return null;
     }
+
     public static Vec2 getClientTargetNormalGlobal() {
         return ClientHandler.getClientTargetNormal();
     }
+
     private static class ClientHandler {
         public static Vec2 getClientTargetNormal() {
             HitResult hitResult = Minecraft.getInstance().hitResult;

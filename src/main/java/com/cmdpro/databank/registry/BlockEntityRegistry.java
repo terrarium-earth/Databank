@@ -16,15 +16,13 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-@EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value = Dist.CLIENT, modid = Databank.MOD_ID)
 public class BlockEntityRegistry {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, Databank.MOD_ID);
 
     public static final Supplier<BlockEntityType<MegastructureSaveBlockEntity>> MEGASTRUCTURE_SAVE =
-            register("megastructure_save", () ->
-                    BlockEntityType.Builder.of(MegastructureSaveBlockEntity::new,
-                            BlockRegistry.MEGASTRUCTURE_SAVE.get()).build(null));
+            register("megastructure_save", () -> new BlockEntityType<>(MegastructureSaveBlockEntity::new, BlockRegistry.MEGASTRUCTURE_SAVE.get()));
 
     private static <T extends BlockEntityType<?>> Supplier<T> register(final String name, final Supplier<T> blockentity) {
         return BLOCK_ENTITIES.register(name, blockentity);

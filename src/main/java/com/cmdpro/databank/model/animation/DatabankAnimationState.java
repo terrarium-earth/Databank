@@ -83,7 +83,7 @@ public class DatabankAnimationState {
     }
     public double getTime() {
         if (level != null) {
-            if (level.isClientSide) {
+            if (level.isClientSide()) {
                 return ClientHandler.getTime();
             } else {
                 return level.getGameTime() / 20d;

@@ -1,23 +1,22 @@
 package com.cmdpro.databank.worldgui.components.types;
 
 import com.cmdpro.databank.worldgui.WorldGui;
-import com.cmdpro.databank.worldgui.components.WorldGuiComponentType;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec2;
 
 public abstract class WorldGuiButtonComponent extends WorldGuiRectComponent {
-    public WorldGuiButtonComponent(WorldGui gui, int x, int y, int width, int height) {
-        super(gui, x, y, width, height);
+    public WorldGuiButtonComponent(int x, int y, int width, int height) {
+        super(x, y, width, height);
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics) {
-        Vec2 normal = getClientTargetNormal();
+    public void render(WorldGui gui, GuiGraphicsExtractor guiGraphics) {
+        Vec2 normal = getClientTargetNormal(gui);
         boolean hovered = false;
         if (normal != null) {
-            int x = normalXIntoGuiX(normal.x);
-            int y = normalYIntoGuiY(normal.y);
+            int x = normalXIntoGuiX(gui, normal.x);
+            int y = normalYIntoGuiY(gui, normal.y);
             if (isPosInBounds(x, y, this.x, this.y, this.x+width, this.y+height)) {
                 hovered = true;
             }
@@ -42,8 +41,8 @@ public abstract class WorldGuiButtonComponent extends WorldGuiRectComponent {
         }
     }
 
-    public abstract void renderNormal(GuiGraphics guiGraphics);
-    public abstract void renderHovered(GuiGraphics guiGraphics);
+    public abstract void renderNormal(GuiGraphicsExtractor guiGraphics);
+    public abstract void renderHovered(GuiGraphicsExtractor guiGraphics);
     public abstract void leftClickButton(boolean isClient, Player player, int x, int y);
     public abstract void rightClickButton(boolean isClient, Player player, int x, int y);
 

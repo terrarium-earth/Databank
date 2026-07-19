@@ -14,7 +14,7 @@ public abstract class DatabankBlockEntityModel<T extends BlockEntityRenderState>
     }
     public void submitModel(T pEntity, PoseStack pPoseStack, SubmitNodeCollector submitNodeCollector, int pPackedOverlay, int pColor, Vec3 normalMult) {
         for (ModelPose.ModelPosePart i : modelPose.parts) {
-            submitPartAndChildren(pEntity, pPoseStack, submitNodeCollector, pPackedOverlay, pEntity.lightCoords, pColor, i, normalMult);
+            submitPartAndChildren(pEntity, pPoseStack, submitNodeCollector, pEntity.lightCoords, pPackedOverlay, pColor, i, normalMult);
         }
     }
 }

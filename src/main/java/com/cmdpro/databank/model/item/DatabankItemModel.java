@@ -14,7 +14,7 @@ public abstract class DatabankItemModel<T> extends BaseDatabankModel<T> {
 
     public void renderModel(T pItem, PoseStack pPoseStack, SubmitNodeCollector submitNodeCollector, int pPackedLight, int pPackedOverlay, int pColor, Vec3 normalMult) {
         for (ModelPose.ModelPosePart i : modelPose.parts) {
-            submitPartAndChildren(pItem, pPoseStack, submitNodeCollector, pPackedOverlay, pPackedLight, pColor, i, normalMult);
+            submitPartAndChildren(pItem, pPoseStack, submitNodeCollector, pPackedLight, pPackedOverlay, pColor, i, normalMult);
         }
     }
 }

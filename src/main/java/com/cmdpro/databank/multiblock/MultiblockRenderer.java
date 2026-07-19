@@ -272,8 +272,8 @@ public class MultiblockRenderer {
     public static class MultiblockRenderState {
         public static final ContextKey<MultiblockRenderState> KEY = new ContextKey<>(Databank.locate("multiblocks"));
 
-        public List<MovingBlockRenderState> movingBlockRenderStates;
-        public List<BlockEntityRenderState> blockEntityRenderStates;
+        public final List<MovingBlockRenderState> movingBlockRenderStates = new ArrayList<>();
+        public final List<BlockEntityRenderState> blockEntityRenderStates = new ArrayList<>();
     }
 
     private static class HologramBuffers extends MultiBufferSource.BufferSource {
@@ -341,6 +341,7 @@ public class MultiblockRenderer {
             return remappedPipelines.computeIfAbsent(
                 in,
                 (pipeline) -> RenderPipeline.builder(pipeline.toBuilder().buildSnippet())
+                    .withLocation(Databank.locate("multiblock_hologram_remapped_" + in.getLocation().getNamespace() + "_" + in.getLocation().getPath()))
                     .withDepthStencilState(Optional.empty())
                     .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
                     .build()

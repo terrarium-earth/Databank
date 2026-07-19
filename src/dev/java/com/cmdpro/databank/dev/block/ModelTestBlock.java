@@ -27,6 +27,6 @@ public class ModelTestBlock extends Block implements EntityBlock, GameMasterBloc
     }
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        return RenderShape.INVISIBLE;
     }
 }

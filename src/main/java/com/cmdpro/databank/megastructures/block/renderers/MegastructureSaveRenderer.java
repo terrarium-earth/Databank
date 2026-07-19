@@ -70,9 +70,8 @@ public class MegastructureSaveRenderer implements BlockEntityRenderer<Megastruct
                 Math.max(corner1.getY(), corner2.getY()),
                 Math.max(corner1.getZ(), corner2.getZ())
         );
-        Vec3 renderOffset = state.blockPos.getCenter().subtract(0.5f, 0.5f, 0.5f).scale(-1);
-        Vec3 min = minBlock.getCenter().add(-0.5f, -0.5f, -0.5f).add(renderOffset);
-        Vec3 max = maxBlock.getCenter().add(0.5f, 0.5f, 0.5f).add(renderOffset);
+        Vec3 min = minBlock.getCenter().add(-0.5f, -0.5f, -0.5f);
+        Vec3 max = maxBlock.getCenter().add(0.5f, 0.5f, 0.5f);
 
         Gizmos.cuboid(
             new AABB(min.x(), min.y(), min.z(), max.x(), max.y(), max.z()),
@@ -82,8 +81,8 @@ public class MegastructureSaveRenderer implements BlockEntityRenderer<Megastruct
 
         if (complete) {
             if (center != null) {
-                Vec3 centerMin = center.getCenter().add(-0.5f, -0.5f, -0.5f).add(renderOffset);
-                Vec3 centerMax = center.getCenter().add(0.5f, 0.5f, 0.5f).add(renderOffset);
+                Vec3 centerMin = center.getCenter().add(-0.5f, -0.5f, -0.5f);
+                Vec3 centerMax = center.getCenter().add(0.5f, 0.5f, 0.5f);
 
                 Gizmos.cuboid(
                     new AABB(centerMin.x(), centerMin.y(), centerMin.z(), centerMax.x(), centerMax.y(), centerMax.z()),

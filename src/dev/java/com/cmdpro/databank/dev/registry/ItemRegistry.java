@@ -1,17 +1,14 @@
 package com.cmdpro.databank.dev.registry;
 
-import com.cmdpro.databank.Databank;
 import com.cmdpro.databank.dev.DatabankDev;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.GameMasterBlockItem;
+import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-import java.util.function.Supplier;
-
 public class ItemRegistry {
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(BuiltInRegistries.ITEM, DatabankDev.MOD_ID);
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(DatabankDev.MOD_ID);
 
-    private static <T extends Item> Supplier<T> register(final String name, final Supplier<T> item) {
-        return ITEMS.register(name, item);
-    }
+    public static final DeferredItem<GameMasterBlockItem> MODEL_TEST_ITEM = ITEMS.registerItem("model_test", (properties) -> new GameMasterBlockItem(BlockRegistry.MODEL_TEST.get(), properties));
+    public static final DeferredItem<BlockItem> MEGABLOCK_TEST_CORE_ITEM = ITEMS.registerSimpleBlockItem(BlockRegistry.MEGABLOCK_TEST_CORE);
 }

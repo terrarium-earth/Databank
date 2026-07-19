@@ -1,25 +1,22 @@
 package com.cmdpro.databank.dev.block;
 
-import com.cmdpro.databank.Databank;
 import com.cmdpro.databank.DatabankUtils;
 import com.cmdpro.databank.dev.registry.BlockRegistry;
 import com.cmdpro.databank.megablock.BasicMegablockCore;
 import com.cmdpro.databank.megablock.MegablockShape;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.*;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 import java.util.ArrayList;
 
 public class MegablockTestCore extends BasicMegablockCore {
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
+
     public MegablockTestCore(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));

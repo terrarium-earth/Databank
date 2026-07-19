@@ -6,7 +6,6 @@ import com.cmdpro.databank.dev.registry.ItemRegistry;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
 
@@ -21,7 +20,6 @@ public class DatabankDev
 
     public DatabankDev(IEventBus bus)
     {
-        ModLoadingContext modLoadingContext = ModLoadingContext.get();
         DatabankDevSpecialConditions.init();
         ItemRegistry.ITEMS.register(bus);
         BlockRegistry.BLOCKS.register(bus);

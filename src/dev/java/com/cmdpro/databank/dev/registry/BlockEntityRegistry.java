@@ -21,9 +21,7 @@ public class BlockEntityRegistry {
             DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, DatabankDev.MOD_ID);
 
     public static final Supplier<BlockEntityType<ModelTestBlockEntity>> MODEL_TEST =
-            register("model_test", () ->
-                    BlockEntityType.Builder.of(ModelTestBlockEntity::new,
-                            BlockRegistry.MODEL_TEST.get()).build(null));
+            register("model_test", () -> new BlockEntityType<>(ModelTestBlockEntity::new, BlockRegistry.MODEL_TEST.get()));
 
     private static <T extends BlockEntityType<?>> Supplier<T> register(final String name, final Supplier<T> blockentity) {
         return BLOCK_ENTITIES.register(name, blockentity);

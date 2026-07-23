@@ -26,6 +26,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class PostShaderInstance implements PostChain.TargetBundle, Closeable {
+    private static final String DATABANK_UNIFORM_BUFFER_LABEL = "PostEffectTransforms";
+
+    private static final UniformBufferInfo DATABANK_UNIFORM_BUFFER_INFO = new UniformBufferInfo(
+        (instance, builder) -> {
+            var camera = Minecraft.getInstance().gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
+
+            builder.putFloat(instance.getTime());
+            builder.putVec3(camera.pos.toVector3f());
+            builder.putMat4f(RenderSystem.getModelViewMatrix());
+            builder.putMat4f(camera.viewRotationMatrix.invert());
+            builder.putMat4f(camera.projectionMatrix.invert());
+        },
+        new Std140SizeCalculator()
+            .putFloat()
+            .putVec3()
+            .putMat4f()
+            .putMat4f()
+            .putMat4f()
+    );
+
     private static RenderTarget depthBackupTarget;
     private final Map<String, UniformBufferBuilder> uniformBuilders;
 
@@ -38,13 +58,19 @@ public abstract class PostShaderInstance implements PostChain.TargetBundle, Clos
     public final Map<Identifier, @Nullable ResourceHandle<RenderTarget>> targets = new HashMap<>();
 
     public PostShaderInstance(Map<String, UniformBufferInfo> uniformBuilders, Identifier... targets) {
-        this.uniformBuilders = uniformBuilders
-            .entrySet()
-            .stream()
-            .map((entry) -> Pair.of(
-                entry.getKey(),
-                new UniformBufferBuilder(entry::getKey, entry.getValue())
-            ))
+        this.uniformBuilders = Stream.concat(
+                Stream.of(Pair.of(
+                    DATABANK_UNIFORM_BUFFER_LABEL,
+                    new UniformBufferBuilder(() -> DATABANK_UNIFORM_BUFFER_LABEL, DATABANK_UNIFORM_BUFFER_INFO)
+                )),
+                uniformBuilders
+                    .entrySet()
+                    .stream()
+                    .map((entry) -> Pair.of(
+                        entry.getKey(),
+                        new UniformBufferBuilder(entry::getKey, entry.getValue())
+                    ))
+            )
             .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
 
         this.targets.put(LevelTargetBundle.MAIN_TARGET_ID, null);
